@@ -11,9 +11,9 @@ An IntelliJ plugin that generates Git commit messages using the [Claude Code](ht
 ## How it works
 
 1. Open the Git commit dialog (`⌘0` / `Alt+0`)
-2. Check the files you want to commit
+2. Check the files or individual changes you want to commit
 3. Click **Generate with Claude** in the toolbar (or the button in the commit options strip)
-4. The plugin reads the branch name and diff of the selected files, sends them to the local `claude` CLI, and fills in the commit message
+4. The plugin reads the branch name and diff of the selected changes, sends them to the local `claude` CLI, and fills in the commit message. Unchecked hunks and lines within a file are excluded.
 
 No API key required — the plugin delegates entirely to the Claude Code CLI you already have installed.
 
@@ -47,6 +47,7 @@ Then install the ZIP from `build/distributions/` via **Settings → Plugins → 
 ```bash
 ./gradlew runIde      # launch a sandbox IDE with the plugin loaded
 ./gradlew buildPlugin # produce a distributable ZIP
+./gradlew test        # run IntelliJ Platform integration tests
 ```
 
 ## License

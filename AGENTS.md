@@ -13,7 +13,7 @@ documentation in English, following existing conventions.
 
 Sources: `src/main/kotlin/com/bocman/claudecommit/`.
 
-- `GenerateWithClaudeAction.kt`: commit-toolbar action, branch/diff collection,
+- `GenerateWithClaudeAction.kt`: commit-toolbar action, branch lookup and IDE patch generation,
   CLI discovery, subprocess execution, and cancellation.
 - `ClaudeCommitHandler.kt`: commit-options button; delegates Git and CLI helpers
   to `GenerateWithClaudeAction` but has its own generation/UI flow.
@@ -31,7 +31,8 @@ Sources: `src/main/kotlin/com/bocman/claudecommit/`.
 - `./gradlew buildPlugin`: build the distributable ZIP in `build/distributions/`.
 - `./gradlew runIde`: launch a sandbox IDE; also available via the checked-in
   **Run IDE with Plugin** run configuration.
-- No test sources are currently checked in. Do not claim automated test coverage.
+- `./gradlew test`: run tests under `src/test/kotlin/` with IntelliJ Platform and
+  temporary Git repositories. Run Gradle with JDK 21.
 - For behavior changes, build and manually verify the affected flow in the
   sandbox IDE. Check both generation entry points when changing shared behavior.
   Relevant cases include selected files, empty selection, settings persistence,
@@ -41,8 +42,10 @@ Sources: `src/main/kotlin/com/bocman/claudecommit/`.
 
 ## Implementation conventions
 
-- Preserve the scope of files selected in the commit UI. Selection is not the
-  same as the Git index: the primary diff command compares selected paths to HEAD.
+- Preserve selected `ChangeListChange` objects and use the IDE patch builder with
+  `honorExcludedFromCommit=true`. The commit UI selection includes individual
+  hunks/lines and is not the same as the Git index. Never fall back to a whole-file
+  or repository diff when the selection produces an empty patch.
 - Keep blocking Git/Claude work in background tasks and UI updates on the EDT.
 - Preserve cancellation, subprocess stream draining, and temporary-file cleanup.
 - Keep process arguments separate through `ProcessBuilder`; avoid shell command
@@ -58,10 +61,9 @@ Sources: `src/main/kotlin/com/bocman/claudecommit/`.
   `pluginConfiguration.ideaVersion` sets build 251. Older IDE support is unverified.
 - `platformVersion` and `platformType` in `gradle.properties` are currently not
   used by the hardcoded platform dependency in `build.gradle.kts`.
-- Git helpers currently use the first repository in the project; do not assume
-  correct multi-root behavior.
-- CLI discovery and the `/dev/null` diff fallback contain Unix-specific paths;
-  Windows support is unverified.
+- Branch lookup currently uses the first repository in the project; do not
+  assume correct multi-root branch context.
+- CLI discovery contains Unix-specific paths; Windows support is unverified.
 
 ## Agent tooling
 

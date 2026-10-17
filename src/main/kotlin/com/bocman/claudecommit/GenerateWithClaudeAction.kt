@@ -5,6 +5,9 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.diff.impl.patch.BinaryFilePatch
+import com.intellij.openapi.diff.impl.patch.IdeaTextPatchBuilder
+import com.intellij.openapi.diff.impl.patch.UnifiedDiffWriter
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -16,6 +19,8 @@ import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.Change
 import git4idea.repo.GitRepositoryManager
 import java.io.File
+import java.io.StringWriter
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 
 class GenerateWithClaudeAction : AnAction("Generate with Claude"), DumbAware {
@@ -109,56 +114,22 @@ class GenerateWithClaudeAction : AnAction("Generate with Claude"), DumbAware {
             ?.currentBranchName
             ?: "unknown"
 
-    internal fun getDiff(project: Project, changes: Collection<Change>?): String {
-        val repo = GitRepositoryManager.getInstance(project).repositories.firstOrNull()
-            ?: return ""
-        val workDir = File(repo.root.path)
+    internal fun getDiff(project: Project, changes: Collection<Change>): String {
+        if (changes.isEmpty()) return ""
+        val basePath = Path.of(project.basePath ?: error("Project base directory is not available"))
 
-        if (!changes.isNullOrEmpty()) {
-            val filePaths = changes.mapNotNull { change ->
-                (change.afterRevision?.file ?: change.beforeRevision?.file)?.path
+        // Keep ChangeListChange objects intact: IntelliJ uses their changelist IDs
+        // and line-status trackers to omit unchecked hunks and individual lines.
+        val patches = IdeaTextPatchBuilder.buildPatch(project, changes, basePath, false, true)
+        return StringWriter().also { writer ->
+            UnifiedDiffWriter.write(project, basePath, patches, writer, "\n", null, emptyList())
+            // UnifiedDiffWriter skips binary patches. Preserve their presence in the prompt.
+            for (patch in patches.filterIsInstance<BinaryFilePatch>()) {
+                val before = if (patch.isNewFile) "/dev/null" else patch.beforeName
+                val after = if (patch.isDeletedFile) "/dev/null" else patch.afterName
+                writer.append("Binary files $before and $after differ\n")
             }
-            LOG.info("[ClaudeCommit] getDiff — ${filePaths.size} path(s): $filePaths")
-
-            if (filePaths.isNotEmpty()) {
-                val diff = git(workDir, "diff", "HEAD", "--", *filePaths.toTypedArray())
-                if (diff.isNotBlank()) {
-                    LOG.info("[ClaudeCommit] getDiff strategy: HEAD diff")
-                    return diff
-                }
-
-                val cached = git(workDir, "diff", "--cached", "--", *filePaths.toTypedArray())
-                if (cached.isNotBlank()) {
-                    LOG.info("[ClaudeCommit] getDiff strategy: cached diff")
-                    return cached
-                }
-
-                val noIndex = filePaths.joinToString("\n") { path ->
-                    git(workDir, "diff", "--no-index", "/dev/null", path)
-                }
-                if (noIndex.isNotBlank()) {
-                    LOG.info("[ClaudeCommit] getDiff strategy: no-index (empty repo)")
-                    return noIndex
-                }
-
-                LOG.warn("[ClaudeCommit] getDiff: all strategies returned empty for $filePaths")
-            }
-        }
-
-        // Fallback when called without a change list (e.g. from tests).
-        LOG.info("[ClaudeCommit] getDiff strategy: fallback (no change list)")
-        val staged = git(workDir, "diff", "--cached")
-        return staged.ifBlank { git(workDir, "diff", "HEAD") }
-    }
-
-    private fun git(workDir: File, vararg args: String): String {
-        val process = ProcessBuilder("git", *args)
-            .directory(workDir)
-            .redirectError(ProcessBuilder.Redirect.DISCARD)
-            .start()
-        val output = process.inputStream.bufferedReader().readText()
-        process.waitFor()
-        return output
+        }.toString()
     }
 
     // -------------------------------------------------------------------------
