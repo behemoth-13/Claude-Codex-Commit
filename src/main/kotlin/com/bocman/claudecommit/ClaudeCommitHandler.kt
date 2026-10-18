@@ -85,9 +85,6 @@ class ClaudeCommitHandler(private val panel: CheckinProjectPanel) : CheckinHandl
 
         return object : RefreshableOnComponent {
             override fun getComponent(): JComponent = button
-            override fun refresh() {
-                button.isEnabled = panel.selectedChanges.isNotEmpty()
-            }
             override fun saveState()    {}
             override fun restoreState() {}
         }
