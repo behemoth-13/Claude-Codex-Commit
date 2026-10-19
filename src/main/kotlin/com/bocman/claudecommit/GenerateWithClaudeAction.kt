@@ -96,7 +96,7 @@ class GenerateWithClaudeAction : AnAction("Generate with Claude"), DumbAware {
                 } catch (_: ProcessCanceledException) {
                     LOG.info("[ClaudeCommit] Generation cancelled by user")
                 } catch (ex: Exception) {
-                    LOG.error("[ClaudeCommit] Generation failed", ex)
+                    LOG.warn("[ClaudeCommit] Generation failed", ex)
                     showError(project, ex.message ?: ex.toString())
                 }
             }
@@ -168,7 +168,10 @@ class GenerateWithClaudeAction : AnAction("Generate with Claude"), DumbAware {
         try {
             tmp.writeText(prompt)
 
-            val pb = ProcessBuilder(claudePath, "--print", "--effort", ClaudeCommitSettings.getInstance().effortLevel.cliValue)
+            val pb = ProcessBuilder(
+                claudePath, "--print", "--output-format", "json",
+                "--effort", ClaudeCommitSettings.getInstance().effortLevel.cliValue
+            )
                 .redirectErrorStream(false)
                 .redirectInput(tmp)
             with(pb.environment()) {
@@ -201,10 +204,9 @@ class GenerateWithClaudeAction : AnAction("Generate with Claude"), DumbAware {
 
             val stdout = stdoutFuture.get()
             val stderr = stderrFuture.get()
-            if (process.waitFor() != 0) {
-                throw RuntimeException("Claude failed:\n${stderr.take(600)}")
-            }
-            return stdout
+            val exitCode = process.waitFor()
+            indicator.checkCanceled()
+            return ClaudeCliResult.parse(stdout, stderr, exitCode)
         } finally {
             tmp.delete()
         }
