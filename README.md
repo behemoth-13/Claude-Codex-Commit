@@ -76,6 +76,12 @@ Use JDK 21 to run Gradle. Intermediate build output, test reports, and sandbox I
 are isolated under `build/claude/` and `build/codex/`; distributable ZIPs share
 `build/distributions/`. Switching flavors does not require `clean`.
 
+Shared implementation lives in `com.bocman.commitcore`. Each flavor supplies
+its provider binding and settings service in `com.bocman.claudecommit` or
+`com.bocman.codexcommit`, selected through a compile-time `PluginFlavor` type alias.
+Plugin IDs, settings component names, and settings storage files remain separate
+and stable across package refactors.
+
 ## License
 
 MIT

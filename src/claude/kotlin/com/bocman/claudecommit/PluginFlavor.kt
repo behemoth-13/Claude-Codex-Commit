@@ -1,5 +1,6 @@
 package com.bocman.claudecommit
 
+import com.bocman.commitcore.CliProvider
 import com.intellij.openapi.application.ApplicationManager
 
 internal object PluginFlavor {

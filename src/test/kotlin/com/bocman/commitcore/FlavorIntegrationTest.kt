@@ -1,15 +1,48 @@
-package com.bocman.claudecommit
+package com.bocman.commitcore
 
 import com.intellij.openapi.components.State
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.testFramework.LightPlatformTestCase
 import com.intellij.util.xmlb.XmlSerializer
+import org.jdom.Element
 import org.junit.Assert.assertThrows as expectThrows
 import java.nio.file.Files
 
 class FlavorIntegrationTest : LightPlatformTestCase() {
+    fun testSettingsServiceKeepsItsIdentityAndLoadsExistingXml() {
+        val settings = CommitSettings.getInstance()
+        val original = settings.state
+        val codex = PluginFlavor.provider == CliProvider.CODEX
+        val providerName = if (codex) "Codex" else "Claude"
+        val providerPackage = if (codex) "codexcommit" else "claudecommit"
+        assertEquals("com.bocman.$providerPackage.${providerName}CommitSettings", settings.javaClass.name)
+        val state = settings.javaClass.getAnnotation(State::class.java)
+        assertEquals("${providerName}CommitSettings", state.name)
+        assertEquals(if (codex) "codex-commit.xml" else "claude-commit.xml", state.storages.single().value)
+
+        val saved = Element("State")
+        for ((name, value) in mapOf(
+            "claudePath" to "/existing/claude",
+            "codexPath" to "/existing/codex",
+            "promptTemplate" to "Branch={BRANCH}\nDiff={DIFF}",
+            "effortLevel" to "high"
+        )) {
+            saved.addContent(Element("option").setAttribute("name", name).setAttribute("value", value))
+        }
+        try {
+            settings.loadState(XmlSerializer.deserialize(saved, CommitSettings.State::class.java))
+            assertEquals(if (codex) "/existing/codex" else "/existing/claude", settings.executablePath)
+            assertEquals("/existing/claude", settings.state.claudePath)
+            assertEquals("/existing/codex", settings.state.codexPath)
+            assertEquals("Branch={BRANCH}\nDiff={DIFF}", settings.promptTemplate)
+            assertEquals(CommitSettings.EffortLevel.HIGH, settings.effortLevel)
+        } finally {
+            settings.loadState(original)
+        }
+    }
+
     fun testActiveFlavorGeneratesUsingItsPersistedSettings() {
-        val settings = ClaudeCommitSettings.getInstance()
+        val settings = CommitSettings.getInstance()
         val original = settings.state
         val directory = Files.createTempDirectory("commit-flavor-test-").toFile()
         try {
@@ -32,13 +65,13 @@ class FlavorIntegrationTest : LightPlatformTestCase() {
                 """.trimMargin() + "\n")
                 check(setExecutable(true))
             }
-            settings.loadState(ClaudeCommitSettings.State())
+            settings.loadState(CommitSettings.State())
             settings.executablePath = cli.path
             settings.promptTemplate = "Branch={BRANCH}\nDiff={DIFF}"
-            settings.effortLevel = ClaudeCommitSettings.EffortLevel.HIGH
+            settings.effortLevel = CommitSettings.EffortLevel.HIGH
             // Round-trip the same XML format used by persisted application settings.
             val saved = XmlSerializer.serialize(settings.state)
-            settings.loadState(XmlSerializer.deserialize(saved, ClaudeCommitSettings.State::class.java))
+            settings.loadState(XmlSerializer.deserialize(saved, CommitSettings.State::class.java))
             val result = CommitMessageGenerator.generate("TEST-123", "+selected hunk", EmptyProgressIndicator())
             assertEquals("Branch=TEST-123\nDiff=+selected hunk", directory.resolve("prompt").readText())
             val arguments = directory.resolve("arguments").readLines()

@@ -1,14 +1,8 @@
-package com.bocman.claudecommit
+package com.bocman.commitcore
 
 import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.State
-import com.intellij.openapi.components.Storage
 
-@State(
-    name = "ClaudeCommitSettings",
-    storages = [Storage("claude-commit.xml")]
-)
-open class ClaudeCommitSettings : PersistentStateComponent<ClaudeCommitSettings.State> {
+open class CommitSettings : PersistentStateComponent<CommitSettings.State> {
 
     /** Mutable backing bean serialised to XML. Use public fields (no val/var) for JAXB. */
     enum class EffortLevel(val cliValue: String, val displayName: String) {
@@ -52,7 +46,7 @@ open class ClaudeCommitSettings : PersistentStateComponent<ClaudeCommitSettings.
         set(v) { myState.effortLevel = v.cliValue }
 
     companion object {
-        fun getInstance(): ClaudeCommitSettings =
+        fun getInstance(): CommitSettings =
             PluginFlavor.settings()
 
         /**

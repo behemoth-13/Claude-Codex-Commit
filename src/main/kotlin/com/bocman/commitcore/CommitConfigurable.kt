@@ -1,4 +1,4 @@
-package com.bocman.claudecommit
+package com.bocman.commitcore
 
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.ui.DialogPanel
@@ -9,9 +9,9 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.rows
 
 /** Settings panel shared by both plugin flavors. */
-class ClaudeCommitConfigurable : BoundConfigurable(PluginFlavor.provider.pluginName) {
+class CommitConfigurable : BoundConfigurable(PluginFlavor.provider.pluginName) {
 
-    private val settings = ClaudeCommitSettings.getInstance()
+    private val settings = CommitSettings.getInstance()
 
     override fun createPanel(): DialogPanel = panel {
         row("${PluginFlavor.provider.displayName} executable:") {
@@ -24,7 +24,7 @@ class ClaudeCommitConfigurable : BoundConfigurable(PluginFlavor.provider.pluginN
             comboBox(PluginFlavor.provider.effortLevels)
                 .bindItem(
                     { settings.effortLevel },
-                    { settings.effortLevel = it ?: ClaudeCommitSettings.EffortLevel.LOW }
+                    { settings.effortLevel = it ?: CommitSettings.EffortLevel.LOW }
                 )
                 .comment("Controls how much reasoning ${PluginFlavor.provider.displayName} applies. Low is fastest.")
         }
@@ -39,7 +39,7 @@ class ClaudeCommitConfigurable : BoundConfigurable(PluginFlavor.provider.pluginN
         }
         row {
             button("Reset To Default") {
-                settings.promptTemplate = ClaudeCommitSettings.Companion.DEFAULT_PROMPT
+                settings.promptTemplate = CommitSettings.Companion.DEFAULT_PROMPT
                 // recreate panel to refresh the text area
                 reset()
             }

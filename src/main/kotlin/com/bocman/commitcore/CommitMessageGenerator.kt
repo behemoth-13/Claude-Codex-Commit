@@ -1,4 +1,4 @@
-package com.bocman.claudecommit
+package com.bocman.commitcore
 
 import com.intellij.openapi.progress.ProgressIndicator
 
@@ -6,7 +6,7 @@ import com.intellij.openapi.progress.ProgressIndicator
 internal object CommitMessageGenerator {
     fun generate(branch: String, diff: String, indicator: ProgressIndicator): String {
         val provider = PluginFlavor.provider
-        val settings = ClaudeCommitSettings.getInstance()
+        val settings = CommitSettings.getInstance()
         val cli = CommitCli(provider)
         val executable = cli.find(settings.executablePath)
             ?: throw RuntimeException(

@@ -1,4 +1,4 @@
-package com.bocman.claudecommit
+package com.bocman.commitcore
 
 import com.intellij.ide.DataManager
 import com.intellij.openapi.application.ApplicationManager
@@ -23,13 +23,13 @@ import javax.swing.event.AncestorListener
  * Adds a generation button to the commit-options strip (the row
  * containing the Amend checkbox). Both entry points use [CommitMessageGenerator].
  */
-class ClaudeCommitHandler(private val panel: CheckinProjectPanel) : CheckinHandler() {
+class CommitHandler(private val panel: CheckinProjectPanel) : CheckinHandler() {
 
     companion object {
-        private val LOG = Logger.getInstance(ClaudeCommitHandler::class.java)
+        private val LOG = Logger.getInstance(CommitHandler::class.java)
     }
 
-    private val worker = GenerateWithClaudeAction()
+    private val worker = GenerateCommitMessageAction()
 
     override fun getBeforeCheckinConfigurationPanel(): RefreshableOnComponent {
         val button = JButton(PluginFlavor.provider.actionText).apply {

@@ -1,4 +1,4 @@
-package com.bocman.claudecommit
+package com.bocman.commitcore
 
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.dvcs.repo.VcsRepositoryManager
@@ -23,7 +23,7 @@ import java.nio.file.Path
 import java.util.BitSet
 import java.util.concurrent.Callable
 
-class GenerateWithClaudeActionTest : HeavyPlatformTestCase() {
+class GenerateCommitMessageActionTest : HeavyPlatformTestCase() {
     fun testExcludedHunkIsNotIncludedInPromptDiff() {
         val before = "first original\n" + (1..10).joinToString("") { "context $it\n" } + "last original\n"
         val after = before.replace("first original", "first selected")
@@ -136,7 +136,7 @@ class GenerateWithClaudeActionTest : HeavyPlatformTestCase() {
 
     private fun diff(changes: List<Change>): String = PlatformTestUtil.waitForFuture(
         ApplicationManager.getApplication().executeOnPooledThread(Callable {
-            GenerateWithClaudeAction().getDiff(project, changes)
+            GenerateCommitMessageAction().getDiff(project, changes)
         })
     )
 

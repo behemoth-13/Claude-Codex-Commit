@@ -1,4 +1,4 @@
-package com.bocman.claudecommit
+package com.bocman.commitcore
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonParseException

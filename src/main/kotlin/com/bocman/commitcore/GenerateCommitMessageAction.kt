@@ -1,4 +1,4 @@
-package com.bocman.claudecommit
+package com.bocman.commitcore
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -21,10 +21,10 @@ import git4idea.repo.GitRepositoryManager
 import java.io.StringWriter
 import java.nio.file.Path
 
-class GenerateWithClaudeAction : AnAction(PluginFlavor.provider.actionText), DumbAware {
+class GenerateCommitMessageAction : AnAction(PluginFlavor.provider.actionText), DumbAware {
 
     companion object {
-        private val LOG = Logger.getInstance(GenerateWithClaudeAction::class.java)
+        private val LOG = Logger.getInstance(GenerateCommitMessageAction::class.java)
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT

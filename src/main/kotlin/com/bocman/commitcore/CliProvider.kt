@@ -1,4 +1,4 @@
-package com.bocman.claudecommit
+package com.bocman.commitcore
 
 import java.io.File
 
@@ -8,9 +8,9 @@ internal enum class CliProvider(val displayName: String, val executable: String,
 
     val pluginName: String get() = "$displayName Commit"
     val actionText: String get() = "Generate with $displayName"
-    val effortLevels: List<ClaudeCommitSettings.EffortLevel>
-        get() = ClaudeCommitSettings.EffortLevel.entries.filter {
-            this != CODEX || it != ClaudeCommitSettings.EffortLevel.MAX
+    val effortLevels: List<CommitSettings.EffortLevel>
+        get() = CommitSettings.EffortLevel.entries.filter {
+            this != CODEX || it != CommitSettings.EffortLevel.MAX
         }
 
     fun command(executablePath: String, effort: String, resultFile: File): List<String> = when (this) {

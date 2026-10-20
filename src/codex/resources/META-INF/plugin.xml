@@ -21,18 +21,18 @@
     <depends>Git4Idea</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="com.bocman.claudecommit.CodexCommitSettings"/>
+        <applicationService serviceImplementation="com.bocman.codexcommit.CodexCommitSettings"/>
         <applicationConfigurable
                 parentId="tools"
-                instance="com.bocman.claudecommit.ClaudeCommitConfigurable"
+                instance="com.bocman.commitcore.CommitConfigurable"
                 id="com.bocman.codexcommit.settings"
                 displayName="Codex Commit"/>
-        <checkinHandlerFactory implementation="com.bocman.claudecommit.ClaudeCommitHandlerFactory"/>
+        <checkinHandlerFactory implementation="com.bocman.commitcore.CommitHandlerFactory"/>
     </extensions>
 
     <actions>
         <action id="CodexCommit.Generate"
-                class="com.bocman.claudecommit.GenerateWithClaudeAction"
+                class="com.bocman.commitcore.GenerateCommitMessageAction"
                 text="Generate with Codex"
                 description="Generate a commit message using the local Codex CLI"
                 icon="/icons/codexCommit.svg">
