@@ -2,9 +2,9 @@
 
 ## Scope
 
-Claude Commit is an IntelliJ Platform plugin that generates Git commit messages
-through the locally installed Claude Code CLI. Developing this repository with
-Codex does not imply changing the plugin's AI provider or branding.
+This IntelliJ Platform plugin generates Git commit messages through a locally
+installed CLI. Claude Commit is the default flavor; `-Pflavor=codex` builds
+Codex Commit. Keep provider and branding changes scoped to the selected flavor.
 
 Keep replies brief and use the user's language. Keep code, UI text, and repository
 documentation in English, following existing conventions.
@@ -13,24 +13,26 @@ documentation in English, following existing conventions.
 
 Sources: `src/main/kotlin/com/bocman/claudecommit/`.
 
-- `GenerateWithClaudeAction.kt`: commit-toolbar action, branch lookup and IDE patch generation,
-  CLI discovery, subprocess execution, and cancellation.
-- `ClaudeCommitHandler.kt`: commit-options button; delegates Git and CLI helpers
-  to `GenerateWithClaudeAction` but has its own generation/UI flow.
+- `GenerateWithClaudeAction.kt`: commit-toolbar action, branch lookup and IDE patch generation.
+- `CommitMessageGenerator.kt`: shared settings, prompt expansion and generation entry point.
+- `CommitCli.kt` / `CliProvider.kt`: CLI discovery, provider arguments/results, subprocess execution and cancellation.
+- `ClaudeCommitHandler.kt`: commit-options button; uses Git helpers from
+  `GenerateWithClaudeAction` and the shared `CommitMessageGenerator`.
 - `ClaudeCommitHandlerFactory.kt`: registers the commit handler.
 - `ClaudeCommitSettings.kt`: application-level persistent settings, effort levels,
   and default prompt. Storage: `claude-commit.xml`.
 - `ClaudeCommitConfigurable.kt`: Settings → Tools → Claude Commit.
-- `src/main/resources/META-INF/plugin.xml`: plugin identity, dependencies,
-  extensions, and toolbar action registration.
+- `src/{claude,codex}/`: flavor-specific provider binding, plugin descriptors and icons.
+  Codex registers its own settings service and stores settings in `codex-commit.xml`.
 
 ## Build and verification
 
 - Gradle wrapper: 8.14.3; Kotlin: 2.1.0; IntelliJ Platform Gradle plugin: 2.7.1.
 - Compilation targets JVM 21 and IntelliJ IDEA Community 2025.1.4.1 with Git4Idea.
 - `./gradlew buildPlugin`: build the distributable ZIP in `build/distributions/`.
-- `./gradlew runIde`: launch a sandbox IDE; also available via the checked-in
-  **Run IDE with Plugin** run configuration.
+- Add `-Pflavor=codex` to build, test or run Codex Commit. Intermediate output
+  and sandbox IDEs are isolated in `build/claude/` and `build/codex/`.
+- `./gradlew runIde`: launch a sandbox IDE.
 - `./gradlew test`: run tests under `src/test/kotlin/` with IntelliJ Platform and
   temporary Git repositories. Run Gradle with JDK 21.
 - For behavior changes, build and manually verify the affected flow in the

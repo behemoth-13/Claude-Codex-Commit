@@ -8,25 +8,25 @@ import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.rows
 
-/** Shown under Settings → Tools → Claude Commit. */
-class ClaudeCommitConfigurable : BoundConfigurable("Claude Commit") {
+/** Settings panel shared by both plugin flavors. */
+class ClaudeCommitConfigurable : BoundConfigurable(PluginFlavor.provider.pluginName) {
 
     private val settings = ClaudeCommitSettings.getInstance()
 
     override fun createPanel(): DialogPanel = panel {
-        row("Claude executable:") {
+        row("${PluginFlavor.provider.displayName} executable:") {
             textField()
-                .bindText(settings::claudePath)
-                .comment("Leave empty to auto-detect. Example: /opt/homebrew/bin/claude")
+                .bindText(settings::executablePath)
+                .comment("Leave empty to auto-detect. Example: /opt/homebrew/bin/${PluginFlavor.provider.executable}")
                 .align(AlignX.FILL)
         }
         row("Effort level:") {
-            comboBox(ClaudeCommitSettings.EffortLevel.entries)
+            comboBox(PluginFlavor.provider.effortLevels)
                 .bindItem(
                     { settings.effortLevel },
                     { settings.effortLevel = it ?: ClaudeCommitSettings.EffortLevel.LOW }
                 )
-                .comment("Controls how much reasoning Claude applies. Low is fastest.")
+                .comment("Controls how much reasoning ${PluginFlavor.provider.displayName} applies. Low is fastest.")
         }
         collapsibleGroup("Prompt Template") {
             row {

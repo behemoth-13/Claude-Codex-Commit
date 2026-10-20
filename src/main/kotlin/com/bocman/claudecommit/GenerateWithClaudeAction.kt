@@ -18,12 +18,10 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.Change
 import git4idea.repo.GitRepositoryManager
-import java.io.File
 import java.io.StringWriter
 import java.nio.file.Path
-import java.util.concurrent.CompletableFuture
 
-class GenerateWithClaudeAction : AnAction("Generate with Claude"), DumbAware {
+class GenerateWithClaudeAction : AnAction(PluginFlavor.provider.actionText), DumbAware {
 
     companion object {
         private val LOG = Logger.getInstance(GenerateWithClaudeAction::class.java)
@@ -43,60 +41,46 @@ class GenerateWithClaudeAction : AnAction("Generate with Claude"), DumbAware {
         val changes = e.getData(VcsDataKeys.COMMIT_WORKFLOW_UI)?.getIncludedChanges() ?: emptyList()
 
         if (changes.isEmpty()) {
-            LOG.info("[ClaudeCommit] Toolbar action triggered with no checked files")
-            Messages.showWarningDialog(project, "No files checked. Select files to commit first.", "Claude Commit")
+            LOG.info("[${PluginFlavor.provider.pluginName}] Toolbar action triggered with no checked files")
+            Messages.showWarningDialog(project, "No files checked. Select files to commit first.", PluginFlavor.provider.pluginName)
             return
         }
 
-        LOG.info("[ClaudeCommit] Toolbar action triggered — ${changes.size} file(s): ${changes.map { it.virtualFile?.name ?: "?" }}")
+        LOG.info("[${PluginFlavor.provider.pluginName}] Toolbar action triggered — ${changes.size} file(s): ${changes.map { it.virtualFile?.name ?: "?" }}")
 
         ProgressManager.getInstance().run(object : Task.Backgroundable(
-            project, "Generating commit message with Claude…", /* canBeCancelled = */ true
+            project, "Generating commit message with ${PluginFlavor.provider.displayName}…", /* canBeCancelled = */ true
         ) {
             override fun run(indicator: ProgressIndicator) {
                 try {
                     indicator.text = "Reading branch name…"
                     val branch = getBranchName(project)
-                    LOG.info("[ClaudeCommit] Branch: $branch")
+                    LOG.info("[${PluginFlavor.provider.pluginName}] Branch: $branch")
 
                     indicator.text = "Reading diff…"
                     val diff = getDiff(project, changes)
 
                     if (diff.isBlank()) {
-                        LOG.warn("[ClaudeCommit] Diff is empty for selected files")
+                        LOG.warn("[${PluginFlavor.provider.pluginName}] Diff is empty for selected files")
                         showWarning(project, "No diff found for the selected files.\nMake sure the files have unsaved changes.")
                         return
                     }
-                    LOG.info("[ClaudeCommit] Diff: ${diff.lines().size} lines, ${diff.length} chars")
-                    LOG.debug("[ClaudeCommit] Diff content:\n$diff")
+                    LOG.info("[${PluginFlavor.provider.pluginName}] Diff: ${diff.lines().size} lines, ${diff.length} chars")
+                    LOG.debug("[${PluginFlavor.provider.pluginName}] Diff content:\n$diff")
 
                     indicator.checkCanceled()
-                    indicator.text = "Calling Claude…"
+                    indicator.text = "Calling ${PluginFlavor.provider.displayName}…"
 
-                    val settings = ClaudeCommitSettings.getInstance()
-                    val claudePath = findClaude(settings)
-                        ?: throw RuntimeException(
-                            "Claude Code CLI not found.\n" +
-                            "Install Claude Code or configure its path under Settings → Tools → Claude Commit."
-                        )
-                    LOG.info("[ClaudeCommit] Using Claude at: $claudePath")
-
-                    val prompt = settings.promptTemplate
-                        .replace("{BRANCH}", branch)
-                        .replace("{DIFF}", diff)
-
-                    LOG.info("[ClaudeCommit] Calling Claude (prompt: ${prompt.length} chars)…")
-                    val message = callClaude(claudePath, prompt, indicator)
-                    LOG.info("[ClaudeCommit] Claude responded (${message.length} chars): ${message.take(120).replace('\n', '↵')}")
+                    val message = CommitMessageGenerator.generate(branch, diff, indicator)
 
                     ApplicationManager.getApplication().invokeLater {
                         commitMessageI?.setCommitMessage(message.trim())
                             ?: showInfo(project, message.trim())
                     }
                 } catch (_: ProcessCanceledException) {
-                    LOG.info("[ClaudeCommit] Generation cancelled by user")
+                    LOG.info("[${PluginFlavor.provider.pluginName}] Generation cancelled by user")
                 } catch (ex: Exception) {
-                    LOG.warn("[ClaudeCommit] Generation failed", ex)
+                    LOG.warn("[${PluginFlavor.provider.pluginName}] Generation failed", ex)
                     showError(project, ex.message ?: ex.toString())
                 }
             }
@@ -133,101 +117,21 @@ class GenerateWithClaudeAction : AnAction("Generate with Claude"), DumbAware {
     }
 
     // -------------------------------------------------------------------------
-    // Claude CLI
-    // -------------------------------------------------------------------------
-
-    internal fun findClaude(settings: ClaudeCommitSettings): String? {
-        val configured = settings.claudePath.trim()
-        if (configured.isNotBlank()) {
-            return if (File(configured).canExecute()) configured
-            else throw RuntimeException("Configured Claude path not executable: $configured")
-        }
-        val home = System.getProperty("user.home")
-        listOf(
-            "/usr/local/bin/claude",
-            "/opt/homebrew/bin/claude",
-            "$home/.local/bin/claude",
-            "$home/.npm-global/bin/claude",
-            "/usr/bin/claude",
-        ).firstOrNull { File(it).canExecute() }?.let { return it }
-
-        return try {
-            val p = ProcessBuilder("which", "claude").redirectErrorStream(true).start()
-            val result = p.inputStream.bufferedReader().readText().trim()
-            if (p.waitFor() == 0 && result.isNotBlank()) result else null
-        } catch (_: Exception) { null }
-    }
-
-    /**
-     * Runs `claude --print` with the prompt piped via a temp file.
-     * Polls [indicator] every 200 ms so the user can cancel with the stop button;
-     * the claude process is force-killed on cancellation.
-     */
-    internal fun callClaude(claudePath: String, prompt: String, indicator: ProgressIndicator): String {
-        val tmp = File.createTempFile("claude_commit_", ".txt")
-        try {
-            tmp.writeText(prompt)
-
-            val pb = ProcessBuilder(
-                claudePath, "--print", "--output-format", "json",
-                "--effort", ClaudeCommitSettings.getInstance().effortLevel.cliValue
-            )
-                .redirectErrorStream(false)
-                .redirectInput(tmp)
-            with(pb.environment()) {
-                val home = System.getProperty("user.home")
-                putIfAbsent("HOME", home)
-                val path = getOrDefault("PATH", "/usr/local/bin:/usr/bin:/bin")
-                put("PATH", "$path:/usr/local/bin:/opt/homebrew/bin:$home/.local/bin:$home/.npm-global/bin")
-            }
-
-            val process = pb.start()
-
-            // Read streams off the main thread so the process pipe buffer never fills up.
-            val stdoutFuture = CompletableFuture.supplyAsync {
-                process.inputStream.bufferedReader().readText()
-            }
-            val stderrFuture = CompletableFuture.supplyAsync {
-                process.errorStream.bufferedReader().readText()
-            }
-
-            // Poll for cancellation — gives the stop button in the progress bar its power.
-            try {
-                while (!stdoutFuture.isDone) {
-                    indicator.checkCanceled()
-                    Thread.sleep(200)
-                }
-            } catch (e: ProcessCanceledException) {
-                process.destroyForcibly()
-                throw e
-            }
-
-            val stdout = stdoutFuture.get()
-            val stderr = stderrFuture.get()
-            val exitCode = process.waitFor()
-            indicator.checkCanceled()
-            return ClaudeCliResult.parse(stdout, stderr, exitCode)
-        } finally {
-            tmp.delete()
-        }
-    }
-
-    // -------------------------------------------------------------------------
     // UI helpers
     // -------------------------------------------------------------------------
 
     private fun showWarning(project: Project, msg: String) =
         ApplicationManager.getApplication().invokeLater {
-            Messages.showWarningDialog(project, msg, "Claude Commit")
+            Messages.showWarningDialog(project, msg, PluginFlavor.provider.pluginName)
         }
 
     private fun showError(project: Project, msg: String) =
         ApplicationManager.getApplication().invokeLater {
-            Messages.showErrorDialog(project, msg, "Claude Commit — Error")
+            Messages.showErrorDialog(project, msg, "${PluginFlavor.provider.pluginName} — Error")
         }
 
     private fun showInfo(project: Project, msg: String) =
         ApplicationManager.getApplication().invokeLater {
-            Messages.showInfoMessage(project, msg, "Claude Commit")
+            Messages.showInfoMessage(project, msg, PluginFlavor.provider.pluginName)
         }
 }

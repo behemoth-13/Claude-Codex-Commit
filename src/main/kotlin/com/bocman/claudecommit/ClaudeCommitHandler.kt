@@ -20,9 +20,8 @@ import javax.swing.event.AncestorEvent
 import javax.swing.event.AncestorListener
 
 /**
- * Adds a "Generate with Claude" button to the commit-options strip (the row
- * containing the Amend checkbox). Generation logic is delegated to
- * [GenerateWithClaudeAction] to keep it in one place.
+ * Adds a generation button to the commit-options strip (the row
+ * containing the Amend checkbox). Both entry points use [CommitMessageGenerator].
  */
 class ClaudeCommitHandler(private val panel: CheckinProjectPanel) : CheckinHandler() {
 
@@ -33,7 +32,7 @@ class ClaudeCommitHandler(private val panel: CheckinProjectPanel) : CheckinHandl
     private val worker = GenerateWithClaudeAction()
 
     override fun getBeforeCheckinConfigurationPanel(): RefreshableOnComponent {
-        val button = JButton("Generate with Claude").apply {
+        val button = JButton(PluginFlavor.provider.actionText).apply {
             isEnabled = false
             toolTipText = "Select files to commit first"
         }
@@ -42,12 +41,12 @@ class ClaudeCommitHandler(private val panel: CheckinProjectPanel) : CheckinHandl
         fun updateButton() {
             val hasChanges = panel.selectedChanges.isNotEmpty()
             if (hasChanges != lastEnabled) {
-                LOG.info("[ClaudeCommit] Button ${if (hasChanges) "enabled" else "disabled"} — ${panel.selectedChanges.size} file(s) checked")
+                LOG.info("[${PluginFlavor.provider.pluginName}] Button ${if (hasChanges) "enabled" else "disabled"} — ${panel.selectedChanges.size} file(s) checked")
                 lastEnabled = hasChanges
             }
             button.isEnabled = hasChanges
             button.toolTipText = if (hasChanges)
-                "Generate a commit message using the local Claude Code CLI"
+                "Generate a commit message using the local ${PluginFlavor.provider.cliName} CLI"
             else
                 "Select files to commit first"
         }
@@ -70,9 +69,9 @@ class ClaudeCommitHandler(private val panel: CheckinProjectPanel) : CheckinHandl
                             ui
                         )
                         listenerAttached = true
-                        LOG.info("[ClaudeCommit] InclusionListener attached via CommitWorkflowUi")
+                        LOG.info("[${PluginFlavor.provider.pluginName}] InclusionListener attached via CommitWorkflowUi")
                     } else {
-                        LOG.warn("[ClaudeCommit] CommitWorkflowUi not available — button state won't update dynamically")
+                        LOG.warn("[${PluginFlavor.provider.pluginName}] CommitWorkflowUi not available — button state won't update dynamically")
                     }
                 }
             }
@@ -95,64 +94,50 @@ class ClaudeCommitHandler(private val panel: CheckinProjectPanel) : CheckinHandl
         val selectedChanges = panel.selectedChanges.toList()
 
         if (selectedChanges.isEmpty()) {
-            LOG.info("[ClaudeCommit] Handler button clicked with no checked files")
+            LOG.info("[${PluginFlavor.provider.pluginName}] Handler button clicked with no checked files")
             Messages.showWarningDialog(
                 project,
                 "No changes selected. Check the files you want to commit first.",
-                "Claude Commit"
+                PluginFlavor.provider.pluginName
             )
             return
         }
 
-        LOG.info("[ClaudeCommit] Handler button clicked — ${selectedChanges.size} file(s): ${selectedChanges.map { it.virtualFile?.name ?: "?" }}")
+        LOG.info("[${PluginFlavor.provider.pluginName}] Handler button clicked — ${selectedChanges.size} file(s): ${selectedChanges.map { it.virtualFile?.name ?: "?" }}")
 
         ProgressManager.getInstance().run(object : Task.Backgroundable(
-            project, "Generating commit message with Claude…", /* canBeCancelled = */ true
+            project, "Generating commit message with ${PluginFlavor.provider.displayName}…", /* canBeCancelled = */ true
         ) {
             override fun run(indicator: ProgressIndicator) {
                 try {
                     indicator.text = "Reading branch name…"
                     val branch = worker.getBranchName(project)
-                    LOG.info("[ClaudeCommit] Branch: $branch")
+                    LOG.info("[${PluginFlavor.provider.pluginName}] Branch: $branch")
 
                     indicator.text = "Reading diff…"
                     val diff = worker.getDiff(project, selectedChanges)
 
                     if (diff.isBlank()) {
-                        LOG.warn("[ClaudeCommit] Diff is empty for selected files")
+                        LOG.warn("[${PluginFlavor.provider.pluginName}] Diff is empty for selected files")
                         showWarning(project, "No diff found for the selected files.")
                         return
                     }
-                    LOG.info("[ClaudeCommit] Diff: ${diff.lines().size} lines, ${diff.length} chars")
-                    LOG.debug("[ClaudeCommit] Diff content:\n$diff")
+                    LOG.info("[${PluginFlavor.provider.pluginName}] Diff: ${diff.lines().size} lines, ${diff.length} chars")
+                    LOG.debug("[${PluginFlavor.provider.pluginName}] Diff content:\n$diff")
 
                     indicator.checkCanceled()
-                    indicator.text = "Calling Claude…"
+                    indicator.text = "Calling ${PluginFlavor.provider.displayName}…"
 
-                    val settings = ClaudeCommitSettings.getInstance()
-                    val claudePath = worker.findClaude(settings)
-                        ?: throw RuntimeException(
-                            "Claude Code CLI not found.\n" +
-                            "Install Claude Code or set its path under Settings → Tools → Claude Commit."
-                        )
-                    LOG.info("[ClaudeCommit] Using Claude at: $claudePath")
-
-                    val prompt = settings.promptTemplate
-                        .replace("{BRANCH}", branch)
-                        .replace("{DIFF}", diff)
-
-                    LOG.info("[ClaudeCommit] Calling Claude (prompt: ${prompt.length} chars)…")
-                    val message = worker.callClaude(claudePath, prompt, indicator)
-                    LOG.info("[ClaudeCommit] Claude responded (${message.length} chars): ${message.take(120).replace('\n', '↵')}")
+                    val message = CommitMessageGenerator.generate(branch, diff, indicator)
 
                     ApplicationManager.getApplication().invokeLater {
                         panel.setCommitMessage(message.trim())
                     }
                 } catch (ex: ProcessCanceledException) {
-                    LOG.info("[ClaudeCommit] Generation cancelled by user")
+                    LOG.info("[${PluginFlavor.provider.pluginName}] Generation cancelled by user")
                     throw ex
                 } catch (ex: Exception) {
-                    LOG.warn("[ClaudeCommit] Generation failed", ex)
+                    LOG.warn("[${PluginFlavor.provider.pluginName}] Generation failed", ex)
                     showError(project, ex.message ?: ex.toString())
                 }
             }
@@ -161,11 +146,11 @@ class ClaudeCommitHandler(private val panel: CheckinProjectPanel) : CheckinHandl
 
     private fun showWarning(project: Project, msg: String) =
         ApplicationManager.getApplication().invokeLater {
-            Messages.showWarningDialog(project, msg, "Claude Commit")
+            Messages.showWarningDialog(project, msg, PluginFlavor.provider.pluginName)
         }
 
     private fun showError(project: Project, msg: String) =
         ApplicationManager.getApplication().invokeLater {
-            Messages.showErrorDialog(project, msg, "Claude Commit — Error")
+            Messages.showErrorDialog(project, msg, "${PluginFlavor.provider.pluginName} — Error")
         }
 }

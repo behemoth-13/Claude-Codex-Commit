@@ -106,7 +106,7 @@ class ClaudeCliTest : LightPlatformTestCase() {
         withCli(success("Unused")) { cli, _ ->
             val indicator = EmptyProgressIndicator().apply { cancel() }
             expectThrows(ProcessCanceledException::class.java) {
-                GenerateWithClaudeAction().callClaude(cli, "prompt", indicator)
+                CommitCli(CliProvider.CLAUDE).generate(cli, "prompt", "low", indicator)
             }
         }
     }
@@ -115,7 +115,7 @@ class ClaudeCliTest : LightPlatformTestCase() {
         """{"type":"result","subtype":"success","is_error":false,"result":"$result"}"""
 
     private fun call(cli: String, prompt: String = "Selected diff") =
-        GenerateWithClaudeAction().callClaude(cli, prompt, EmptyProgressIndicator())
+        CommitCli(CliProvider.CLAUDE).generate(cli, prompt, "low", EmptyProgressIndicator())
 
     private fun failure(cli: String): String =
         expectThrows(RuntimeException::class.java) { call(cli) }.message.orEmpty()

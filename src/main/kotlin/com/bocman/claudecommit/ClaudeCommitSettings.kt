@@ -1,6 +1,5 @@
 package com.bocman.claudecommit
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
@@ -9,7 +8,7 @@ import com.intellij.openapi.components.Storage
     name = "ClaudeCommitSettings",
     storages = [Storage("claude-commit.xml")]
 )
-class ClaudeCommitSettings : PersistentStateComponent<ClaudeCommitSettings.State> {
+open class ClaudeCommitSettings : PersistentStateComponent<ClaudeCommitSettings.State> {
 
     /** Mutable backing bean serialised to XML. Use public fields (no val/var) for JAXB. */
     enum class EffortLevel(val cliValue: String, val displayName: String) {
@@ -24,6 +23,7 @@ class ClaudeCommitSettings : PersistentStateComponent<ClaudeCommitSettings.State
 
     class State {
         @JvmField var claudePath: String = ""
+        @JvmField var codexPath: String = ""
         @JvmField var promptTemplate: String = DEFAULT_PROMPT
         @JvmField var effortLevel: String = EffortLevel.LOW.cliValue
     }
@@ -37,17 +37,23 @@ class ClaudeCommitSettings : PersistentStateComponent<ClaudeCommitSettings.State
         get() = myState.claudePath
         set(v) { myState.claudePath = v }
 
+    var executablePath: String
+        get() = if (PluginFlavor.provider == CliProvider.CODEX) myState.codexPath else myState.claudePath
+        set(v) {
+            if (PluginFlavor.provider == CliProvider.CODEX) myState.codexPath = v else myState.claudePath = v
+        }
+
     var promptTemplate: String
         get() = myState.promptTemplate
         set(v) { myState.promptTemplate = v }
 
     var effortLevel: EffortLevel
-        get() = EffortLevel.entries.firstOrNull { it.cliValue == myState.effortLevel } ?: EffortLevel.LOW
+        get() = PluginFlavor.provider.effortLevels.firstOrNull { it.cliValue == myState.effortLevel } ?: EffortLevel.LOW
         set(v) { myState.effortLevel = v.cliValue }
 
     companion object {
         fun getInstance(): ClaudeCommitSettings =
-            ApplicationManager.getApplication().getService(ClaudeCommitSettings::class.java)
+            PluginFlavor.settings()
 
         /**
          * Default prompt mirrors the JetBrains AI "Commit Message Generation" built-in action.
