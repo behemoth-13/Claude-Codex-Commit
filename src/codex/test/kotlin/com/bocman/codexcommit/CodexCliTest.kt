@@ -1,4 +1,6 @@
-package com.bocman.commitcore
+package com.bocman.codexcommit
+
+import com.bocman.commitcore.CommitCli
 
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProcessCanceledException
@@ -74,7 +76,7 @@ class CodexCliTest : LightPlatformTestCase() {
         cli: String,
         prompt: String = "Selected diff",
         indicator: EmptyProgressIndicator = EmptyProgressIndicator()
-    ): String = CommitCli(CliProvider.CODEX).generate(cli, prompt, "low", indicator)
+    ): String = CommitCli(CodexCliProvider).generate(cli, prompt, "low", indicator)
 
     private fun withCli(
         result: String = "Fix selected changes\n\nPreserve unchecked hunks",
@@ -87,7 +89,8 @@ class CodexCliTest : LightPlatformTestCase() {
         try {
             directory.resolve("result").writeText(result)
             val cli = directory.resolve("codex with spaces").apply {
-                writeText("""
+                writeText(
+                    """
                     |#!/bin/sh
                     |printf '%s\n' "${'$'}@" > '${directory.resolve("arguments")}'
                     |printf '%s\n' "${'$'}${'$'}" > '${directory.resolve("pid")}'
@@ -105,7 +108,8 @@ class CodexCliTest : LightPlatformTestCase() {
                     |echo 'CLI diagnostic' >&2
                     |${if (waitAfterOutput) "exec 1>&- 2>&-\ntouch '${directory.resolve("ready")}'\nexec sleep 30" else ""}
                     |exit $exitCode
-                """.trimMargin() + "\n")
+                """.trimMargin() + "\n"
+                )
                 check(setExecutable(true))
             }
             check(cli.path, directory)

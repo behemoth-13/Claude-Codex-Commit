@@ -69,18 +69,24 @@ come from your Codex CLI configuration.
 ./gradlew test        # run IntelliJ Platform integration tests
 
 ./gradlew runIde -Pflavor=codex
+./gradlew test buildPlugin -Pflavor=claude
 ./gradlew test buildPlugin -Pflavor=codex
 ```
 
 Use JDK 21 to run Gradle. Intermediate build output, test reports, and sandbox IDEs
 are isolated under `build/claude/` and `build/codex/`; distributable ZIPs share
 `build/distributions/`. Switching flavors does not require `clean`.
+After moving classes between packages or source sets, run `clean` once for each
+flavor to remove stale instrumented classes.
 
-Shared implementation lives in `com.bocman.commitcore`. Each flavor supplies
-its provider binding and settings service in `com.bocman.claudecommit` or
+Shared UI, process execution, and settings APIs live in `com.bocman.commitcore`.
+Each flavor supplies its CLI arguments, response parsing, supported effort levels,
+working-directory policy, and persistent settings in `com.bocman.claudecommit` or
 `com.bocman.codexcommit`, selected through a compile-time `PluginFlavor` type alias.
-Plugin IDs, settings component names, and settings storage files remain separate
-and stable across package refactors.
+Provider-specific tests live under `src/<flavor>/test/kotlin` and run alongside
+the shared tests. Each distributable includes only its own provider implementation.
+Plugin IDs, settings component names, storage files, and executable-path XML keys
+remain stable across package refactors.
 
 ## License
 

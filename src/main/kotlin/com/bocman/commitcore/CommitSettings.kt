@@ -1,10 +1,8 @@
 package com.bocman.commitcore
 
-import com.intellij.openapi.components.PersistentStateComponent
+/** Common settings API; each flavor owns its persisted state and executable path. */
+abstract class CommitSettings {
 
-open class CommitSettings : PersistentStateComponent<CommitSettings.State> {
-
-    /** Mutable backing bean serialised to XML. Use public fields (no val/var) for JAXB. */
     enum class EffortLevel(val cliValue: String, val displayName: String) {
         LOW("low", "Low"),
         MEDIUM("medium", "Medium"),
@@ -15,35 +13,30 @@ open class CommitSettings : PersistentStateComponent<CommitSettings.State> {
         override fun toString() = displayName
     }
 
-    class State {
-        @JvmField var claudePath: String = ""
-        @JvmField var codexPath: String = ""
-        @JvmField var promptTemplate: String = DEFAULT_PROMPT
-        @JvmField var effortLevel: String = EffortLevel.LOW.cliValue
+    /** Shared XML fields, inherited by the flavor's mutable state bean. */
+    open class State {
+        @JvmField
+        var promptTemplate: String = DEFAULT_PROMPT
+        @JvmField
+        var effortLevel: String = EffortLevel.LOW.cliValue
     }
 
-    private var myState = State()
+    protected abstract val settingsState: State
 
-    override fun getState(): State = myState
-    override fun loadState(state: State) { myState = state }
-
-    var claudePath: String
-        get() = myState.claudePath
-        set(v) { myState.claudePath = v }
-
-    var executablePath: String
-        get() = if (PluginFlavor.provider == CliProvider.CODEX) myState.codexPath else myState.claudePath
-        set(v) {
-            if (PluginFlavor.provider == CliProvider.CODEX) myState.codexPath = v else myState.claudePath = v
-        }
+    abstract var executablePath: String
 
     var promptTemplate: String
-        get() = myState.promptTemplate
-        set(v) { myState.promptTemplate = v }
+        get() = settingsState.promptTemplate
+        set(v) {
+            settingsState.promptTemplate = v
+        }
 
     var effortLevel: EffortLevel
-        get() = PluginFlavor.provider.effortLevels.firstOrNull { it.cliValue == myState.effortLevel } ?: EffortLevel.LOW
-        set(v) { myState.effortLevel = v.cliValue }
+        get() = PluginFlavor.provider.effortLevels.firstOrNull { it.cliValue == settingsState.effortLevel }
+            ?: EffortLevel.LOW
+        set(v) {
+            settingsState.effortLevel = v.cliValue
+        }
 
     companion object {
         fun getInstance(): CommitSettings =

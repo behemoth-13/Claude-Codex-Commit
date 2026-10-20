@@ -10,9 +10,9 @@ import java.nio.file.Files
 
 class FlavorIntegrationTest : LightPlatformTestCase() {
     fun testSettingsServiceKeepsItsIdentityAndLoadsExistingXml() {
-        val settings = CommitSettings.getInstance()
+        val settings = PluginFlavor.settings()
         val original = settings.state
-        val codex = PluginFlavor.provider == CliProvider.CODEX
+        val codex = PluginFlavor.provider.executable == "codex"
         val providerName = if (codex) "Codex" else "Claude"
         val providerPackage = if (codex) "codexcommit" else "claudecommit"
         assertEquals("com.bocman.$providerPackage.${providerName}CommitSettings", settings.javaClass.name)
@@ -30,10 +30,12 @@ class FlavorIntegrationTest : LightPlatformTestCase() {
             saved.addContent(Element("option").setAttribute("name", name).setAttribute("value", value))
         }
         try {
-            settings.loadState(XmlSerializer.deserialize(saved, CommitSettings.State::class.java))
+            settings.loadState(XmlSerializer.deserialize(saved, original.javaClass))
             assertEquals(if (codex) "/existing/codex" else "/existing/claude", settings.executablePath)
-            assertEquals("/existing/claude", settings.state.claudePath)
-            assertEquals("/existing/codex", settings.state.codexPath)
+            val serialized = XmlSerializer.serialize(settings.state)
+            val pathKey = if (codex) "codexPath" else "claudePath"
+            val pathOption = serialized.getChildren("option").single { it.getAttributeValue("name") == pathKey }
+            assertEquals(if (codex) "/existing/codex" else "/existing/claude", pathOption.getAttributeValue("value"))
             assertEquals("Branch={BRANCH}\nDiff={DIFF}", settings.promptTemplate)
             assertEquals(CommitSettings.EffortLevel.HIGH, settings.effortLevel)
         } finally {
@@ -42,12 +44,13 @@ class FlavorIntegrationTest : LightPlatformTestCase() {
     }
 
     fun testActiveFlavorGeneratesUsingItsPersistedSettings() {
-        val settings = CommitSettings.getInstance()
+        val settings = PluginFlavor.settings()
         val original = settings.state
         val directory = Files.createTempDirectory("commit-flavor-test-").toFile()
         try {
             val cli = directory.resolve("configured cli").apply {
-                writeText("""
+                writeText(
+                    """
                     |#!/bin/sh
                     |printf '%s\n' "${'$'}@" > '${directory.resolve("arguments")}'
                     |cat > '${directory.resolve("prompt")}'
@@ -62,30 +65,30 @@ class FlavorIntegrationTest : LightPlatformTestCase() {
                     |    shift
                     |  done
                     |fi
-                """.trimMargin() + "\n")
+                """.trimMargin() + "\n"
+                )
                 check(setExecutable(true))
             }
-            settings.loadState(CommitSettings.State())
+            settings.loadState(XmlSerializer.deserialize(Element("State"), original.javaClass))
             settings.executablePath = cli.path
             settings.promptTemplate = "Branch={BRANCH}\nDiff={DIFF}"
             settings.effortLevel = CommitSettings.EffortLevel.HIGH
             // Round-trip the same XML format used by persisted application settings.
             val saved = XmlSerializer.serialize(settings.state)
-            settings.loadState(XmlSerializer.deserialize(saved, CommitSettings.State::class.java))
+            settings.loadState(XmlSerializer.deserialize(saved, original.javaClass))
             val result = CommitMessageGenerator.generate("TEST-123", "+selected hunk", EmptyProgressIndicator())
             assertEquals("Branch=TEST-123\nDiff=+selected hunk", directory.resolve("prompt").readText())
             val arguments = directory.resolve("arguments").readLines()
-            if (PluginFlavor.provider == CliProvider.CODEX) {
+            if (PluginFlavor.provider.executable == "codex") {
                 assertEquals("Generated with Codex", result)
                 assertTrue(arguments.contains("model_reasoning_effort=\"high\""))
-                assertEquals("", settings.claudePath)
             } else {
                 assertEquals("Generated with Claude", result)
                 assertTrue(arguments.windowed(2).contains(listOf("--effort", "high")))
-                assertEquals(cli.path, settings.claudePath)
             }
             val state = settings.javaClass.getAnnotation(State::class.java)
-            val expectedStorage = if (PluginFlavor.provider == CliProvider.CODEX) "codex-commit.xml" else "claude-commit.xml"
+            val expectedStorage =
+                if (PluginFlavor.provider.executable == "codex") "codex-commit.xml" else "claude-commit.xml"
             assertEquals(expectedStorage, state.storages.single().value)
         } finally {
             settings.loadState(original)
@@ -93,16 +96,35 @@ class FlavorIntegrationTest : LightPlatformTestCase() {
         }
     }
 
+    fun testEffortLevelsKeepFlavorSpecificLimitsAfterReload() {
+        val settings = PluginFlavor.settings()
+        val original = settings.state
+        try {
+            val saved = Element("State").addContent(
+                Element("option").setAttribute("name", "effortLevel").setAttribute("value", "max")
+            )
+            settings.loadState(XmlSerializer.deserialize(saved, original.javaClass))
+            val expected = if (PluginFlavor.provider.executable == "codex") {
+                CommitSettings.EffortLevel.LOW
+            } else {
+                CommitSettings.EffortLevel.MAX
+            }
+            assertEquals(expected, settings.effortLevel)
+            settings.effortLevel = CommitSettings.EffortLevel.XHIGH
+            assertEquals(CommitSettings.EffortLevel.XHIGH, settings.effortLevel)
+        } finally {
+            settings.loadState(original)
+        }
+    }
+
     fun testInvalidExplicitCliPathNeverFallsBackToInstalledCli() {
         val directory = Files.createTempDirectory("invalid-commit-cli-").toFile()
         try {
-            for (provider in CliProvider.entries) {
-                val cli = CommitCli(provider)
-                expectThrows(RuntimeException::class.java) { cli.find(directory.resolve("missing").path) }
-                expectThrows(RuntimeException::class.java) { cli.find(directory.path) }
-                val nonExecutable = directory.resolve("plain-file").apply { writeText("not executable") }
-                expectThrows(RuntimeException::class.java) { cli.find(nonExecutable.path) }
-            }
+            val cli = CommitCli(PluginFlavor.provider)
+            expectThrows(RuntimeException::class.java) { cli.find(directory.resolve("missing").path) }
+            expectThrows(RuntimeException::class.java) { cli.find(directory.path) }
+            val nonExecutable = directory.resolve("plain-file").apply { writeText("not executable") }
+            expectThrows(RuntimeException::class.java) { cli.find(nonExecutable.path) }
         } finally {
             directory.deleteRecursively()
         }

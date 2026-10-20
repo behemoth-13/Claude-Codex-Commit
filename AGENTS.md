@@ -15,14 +15,15 @@ Shared sources: `src/main/kotlin/com/bocman/commitcore/`.
 
 - `GenerateCommitMessageAction.kt`: commit-toolbar action, branch lookup and IDE patch generation.
 - `CommitMessageGenerator.kt`: shared settings, prompt expansion and generation entry point.
-- `CommitCli.kt` / `CliProvider.kt`: CLI discovery, provider arguments/results, subprocess execution and cancellation.
+- `CommitCli.kt` / `CliProvider.kt`: CLI discovery, provider contract, subprocess execution and cancellation.
 - `CommitHandler.kt`: commit-options button; uses Git helpers from
   `GenerateCommitMessageAction` and the shared `CommitMessageGenerator`.
 - `CommitHandlerFactory.kt`: registers the commit handler.
-- `CommitSettings.kt`: shared persistent-state model, effort levels, and default prompt.
+- `CommitSettings.kt`: shared settings API and state fields, effort levels, and default prompt.
 - `CommitConfigurable.kt`: Settings → Tools → Claude Commit / Codex Commit.
-- `src/{claude,codex}/`: flavor-specific provider binding, plugin descriptors and icons.
-  Provider bindings and settings services live in `com.bocman.claudecommit` and
+- `src/{claude,codex}/`: flavor-specific CLI protocols, provider bindings, persisted
+  executable paths, plugin descriptors, icons, and tests under `test/kotlin`.
+  Providers and settings services live in `com.bocman.claudecommit` and
   `com.bocman.codexcommit`; each flavor supplies a `commitcore.PluginFlavor` type alias.
   Settings retain their component names and storage files (`claude-commit.xml` / `codex-commit.xml`).
 

@@ -23,8 +23,11 @@ sourceSets {
 kotlin.sourceSets.main {
     kotlin.srcDir("src/$flavor/kotlin")
 }
+kotlin.sourceSets.test {
+    kotlin.srcDir("src/$flavor/test/kotlin")
+}
 
-group   = properties("pluginGroup")
+group = properties("pluginGroup")
 version = properties("pluginVersion")
 
 repositories {
@@ -44,6 +47,8 @@ dependencies {
 }
 
 intellijPlatform {
+    buildSearchableOptions = false
+
     pluginConfiguration {
         name = "$providerName Commit"
         ideaVersion {
@@ -60,9 +65,6 @@ tasks {
     withType<JavaCompile> {
         sourceCompatibility = "21"
         targetCompatibility = "21"
-    }
-    buildSearchableOptions {
-        enabled = false
     }
     patchPluginXml {
         inputFile.set(layout.projectDirectory.file("src/$flavor/resources/META-INF/plugin.xml"))

@@ -25,7 +25,7 @@ internal class CommitCli(private val provider: CliProvider) {
 
     fun generate(executablePath: String, prompt: String, effort: String, indicator: ProgressIndicator): String {
         indicator.checkCanceled()
-        val directory = Files.createTempDirectory("${provider.executable}_commit_").toFile()
+        val directory = Files.createTempDirectory("commit_core_").toFile()
         var process: Process? = null
         try {
             val input = directory.resolve("prompt.txt").apply { writeText(prompt) }
@@ -33,8 +33,7 @@ internal class CommitCli(private val provider: CliProvider) {
             val builder = ProcessBuilder(provider.command(executablePath, effort, result))
                 .redirectErrorStream(false)
                 .redirectInput(input)
-            // Codex receives only the selected patch, without project instructions or repository discovery.
-            if (provider == CliProvider.CODEX) builder.directory(directory)
+                .directory(provider.workingDirectory(directory))
             with(builder.environment()) {
                 val home = System.getProperty("user.home")
                 putIfAbsent("HOME", home)

@@ -41,12 +41,16 @@ class GenerateCommitMessageAction : AnAction(PluginFlavor.provider.actionText), 
         val changes = e.getData(VcsDataKeys.COMMIT_WORKFLOW_UI)?.getIncludedChanges() ?: emptyList()
 
         if (changes.isEmpty()) {
-            LOG.info("[${PluginFlavor.provider.pluginName}] Toolbar action triggered with no checked files")
-            Messages.showWarningDialog(project, "No files checked. Select files to commit first.", PluginFlavor.provider.pluginName)
+            LOG.info("[CommitCore] Toolbar action triggered with no checked files")
+            Messages.showWarningDialog(
+                project,
+                "No files checked. Select files to commit first.",
+                PluginFlavor.provider.pluginName
+            )
             return
         }
 
-        LOG.info("[${PluginFlavor.provider.pluginName}] Toolbar action triggered — ${changes.size} file(s): ${changes.map { it.virtualFile?.name ?: "?" }}")
+        LOG.info("[CommitCore] Toolbar action triggered — ${changes.size} file(s): ${changes.map { it.virtualFile?.name ?: "?" }}")
 
         ProgressManager.getInstance().run(object : Task.Backgroundable(
             project, "Generating commit message with ${PluginFlavor.provider.displayName}…", /* canBeCancelled = */ true
@@ -55,18 +59,21 @@ class GenerateCommitMessageAction : AnAction(PluginFlavor.provider.actionText), 
                 try {
                     indicator.text = "Reading branch name…"
                     val branch = getBranchName(project)
-                    LOG.info("[${PluginFlavor.provider.pluginName}] Branch: $branch")
+                    LOG.info("[CommitCore] Branch: $branch")
 
                     indicator.text = "Reading diff…"
                     val diff = getDiff(project, changes)
 
                     if (diff.isBlank()) {
-                        LOG.warn("[${PluginFlavor.provider.pluginName}] Diff is empty for selected files")
-                        showWarning(project, "No diff found for the selected files.\nMake sure the files have unsaved changes.")
+                        LOG.warn("[CommitCore] Diff is empty for selected files")
+                        showWarning(
+                            project,
+                            "No diff found for the selected files.\nMake sure the files have unsaved changes."
+                        )
                         return
                     }
-                    LOG.info("[${PluginFlavor.provider.pluginName}] Diff: ${diff.lines().size} lines, ${diff.length} chars")
-                    LOG.debug("[${PluginFlavor.provider.pluginName}] Diff content:\n$diff")
+                    LOG.info("[CommitCore] Diff: ${diff.lines().size} lines, ${diff.length} chars")
+                    LOG.debug("[CommitCore] Diff content:\n$diff")
 
                     indicator.checkCanceled()
                     indicator.text = "Calling ${PluginFlavor.provider.displayName}…"
@@ -78,9 +85,9 @@ class GenerateCommitMessageAction : AnAction(PluginFlavor.provider.actionText), 
                             ?: showInfo(project, message.trim())
                     }
                 } catch (_: ProcessCanceledException) {
-                    LOG.info("[${PluginFlavor.provider.pluginName}] Generation cancelled by user")
+                    LOG.info("[CommitCore] Generation cancelled by user")
                 } catch (ex: Exception) {
-                    LOG.warn("[${PluginFlavor.provider.pluginName}] Generation failed", ex)
+                    LOG.warn("[CommitCore] Generation failed", ex)
                     showError(project, ex.message ?: ex.toString())
                 }
             }

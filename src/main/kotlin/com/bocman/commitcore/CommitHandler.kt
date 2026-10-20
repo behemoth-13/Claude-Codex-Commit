@@ -41,7 +41,7 @@ class CommitHandler(private val panel: CheckinProjectPanel) : CheckinHandler() {
         fun updateButton() {
             val hasChanges = panel.selectedChanges.isNotEmpty()
             if (hasChanges != lastEnabled) {
-                LOG.info("[${PluginFlavor.provider.pluginName}] Button ${if (hasChanges) "enabled" else "disabled"} — ${panel.selectedChanges.size} file(s) checked")
+                LOG.info("[CommitCore] Button ${if (hasChanges) "enabled" else "disabled"} — ${panel.selectedChanges.size} file(s) checked")
                 lastEnabled = hasChanges
             }
             button.isEnabled = hasChanges
@@ -69,22 +69,22 @@ class CommitHandler(private val panel: CheckinProjectPanel) : CheckinHandler() {
                             ui
                         )
                         listenerAttached = true
-                        LOG.info("[${PluginFlavor.provider.pluginName}] InclusionListener attached via CommitWorkflowUi")
+                        LOG.info("[CommitCore] InclusionListener attached via CommitWorkflowUi")
                     } else {
-                        LOG.warn("[${PluginFlavor.provider.pluginName}] CommitWorkflowUi not available — button state won't update dynamically")
+                        LOG.warn("[CommitCore] CommitWorkflowUi not available — button state won't update dynamically")
                     }
                 }
             }
 
             override fun ancestorRemoved(e: AncestorEvent) {}
-            override fun ancestorMoved(e: AncestorEvent)   {}
+            override fun ancestorMoved(e: AncestorEvent) {}
         })
 
         button.addActionListener { generateCommitMessage() }
 
         return object : RefreshableOnComponent {
             override fun getComponent(): JComponent = button
-            override fun saveState()    {}
+            override fun saveState() {}
             override fun restoreState() {}
         }
     }
@@ -94,7 +94,7 @@ class CommitHandler(private val panel: CheckinProjectPanel) : CheckinHandler() {
         val selectedChanges = panel.selectedChanges.toList()
 
         if (selectedChanges.isEmpty()) {
-            LOG.info("[${PluginFlavor.provider.pluginName}] Handler button clicked with no checked files")
+            LOG.info("[CommitCore] Handler button clicked with no checked files")
             Messages.showWarningDialog(
                 project,
                 "No changes selected. Check the files you want to commit first.",
@@ -103,7 +103,7 @@ class CommitHandler(private val panel: CheckinProjectPanel) : CheckinHandler() {
             return
         }
 
-        LOG.info("[${PluginFlavor.provider.pluginName}] Handler button clicked — ${selectedChanges.size} file(s): ${selectedChanges.map { it.virtualFile?.name ?: "?" }}")
+        LOG.info("[CommitCore] Handler button clicked — ${selectedChanges.size} file(s): ${selectedChanges.map { it.virtualFile?.name ?: "?" }}")
 
         ProgressManager.getInstance().run(object : Task.Backgroundable(
             project, "Generating commit message with ${PluginFlavor.provider.displayName}…", /* canBeCancelled = */ true
@@ -112,18 +112,18 @@ class CommitHandler(private val panel: CheckinProjectPanel) : CheckinHandler() {
                 try {
                     indicator.text = "Reading branch name…"
                     val branch = worker.getBranchName(project)
-                    LOG.info("[${PluginFlavor.provider.pluginName}] Branch: $branch")
+                    LOG.info("[CommitCore] Branch: $branch")
 
                     indicator.text = "Reading diff…"
                     val diff = worker.getDiff(project, selectedChanges)
 
                     if (diff.isBlank()) {
-                        LOG.warn("[${PluginFlavor.provider.pluginName}] Diff is empty for selected files")
+                        LOG.warn("[CommitCore] Diff is empty for selected files")
                         showWarning(project, "No diff found for the selected files.")
                         return
                     }
-                    LOG.info("[${PluginFlavor.provider.pluginName}] Diff: ${diff.lines().size} lines, ${diff.length} chars")
-                    LOG.debug("[${PluginFlavor.provider.pluginName}] Diff content:\n$diff")
+                    LOG.info("[CommitCore] Diff: ${diff.lines().size} lines, ${diff.length} chars")
+                    LOG.debug("[CommitCore] Diff content:\n$diff")
 
                     indicator.checkCanceled()
                     indicator.text = "Calling ${PluginFlavor.provider.displayName}…"
@@ -134,10 +134,10 @@ class CommitHandler(private val panel: CheckinProjectPanel) : CheckinHandler() {
                         panel.setCommitMessage(message.trim())
                     }
                 } catch (ex: ProcessCanceledException) {
-                    LOG.info("[${PluginFlavor.provider.pluginName}] Generation cancelled by user")
+                    LOG.info("[CommitCore] Generation cancelled by user")
                     throw ex
                 } catch (ex: Exception) {
-                    LOG.warn("[${PluginFlavor.provider.pluginName}] Generation failed", ex)
+                    LOG.warn("[CommitCore] Generation failed", ex)
                     showError(project, ex.message ?: ex.toString())
                 }
             }
