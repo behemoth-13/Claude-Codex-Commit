@@ -38,6 +38,7 @@ class FlavorIntegrationTest : LightPlatformTestCase() {
             assertEquals(if (codex) "/existing/codex" else "/existing/claude", pathOption.getAttributeValue("value"))
             assertEquals("Branch={BRANCH}\nDiff={DIFF}", settings.promptTemplate)
             assertEquals(CommitSettings.EffortLevel.HIGH, settings.effortLevel)
+            assertEquals("", settings.model)
         } finally {
             settings.loadState(original)
         }
@@ -75,10 +76,16 @@ class FlavorIntegrationTest : LightPlatformTestCase() {
             settings.effortLevel = CommitSettings.EffortLevel.HIGH
             // Round-trip the same XML format used by persisted application settings.
             val saved = XmlSerializer.serialize(settings.state)
+            saved.addContent(Element("option").setAttribute("name", "model").setAttribute("value", "future-model"))
             settings.loadState(XmlSerializer.deserialize(saved, original.javaClass))
             val result = CommitMessageGenerator.generate("TEST-123", "+selected hunk", EmptyProgressIndicator())
             assertEquals("Branch=TEST-123\nDiff=+selected hunk", directory.resolve("prompt").readText())
             val arguments = directory.resolve("arguments").readLines()
+            assertTrue(arguments.toString(), arguments.windowed(2).contains(listOf("--model", "future-model")))
+            assertEquals("future-model", settings.model)
+            settings.model = "  "
+            CommitMessageGenerator.generate("TEST-123", "+selected hunk", EmptyProgressIndicator())
+            assertFalse(directory.resolve("arguments").readLines().contains("--model"))
             if (PluginFlavor.provider.executable == "codex") {
                 assertEquals("Generated with Codex", result)
                 assertTrue(arguments.contains("model_reasoning_effort=\"high\""))

@@ -52,14 +52,20 @@ Claude remains the default flavor and retains its existing settings.
 | Setting | Description |
 |---|---|
 | Claude / Codex executable | Path to the corresponding CLI binary. Leave empty to auto-detect from common locations and `$PATH`. |
+| Model | Choose a model or type a custom model name. **Default (CLI configuration)** or an empty field omits `--model`, preserving the CLI's configured default. Models load from the CLI in the background; **Refresh Models** reloads them using the executable path currently entered. If discovery fails, built-in suggestions remain available. |
 | Effort level | Claude: Low → Medium → High → Extra High → Max. Codex: Low → Medium → High → Extra High. Supported effort levels depend on the CLI's selected model. |
 | Prompt template | The prompt sent to the CLI. Use `{BRANCH}` and `{DIFF}` as placeholders. |
 
 Codex runs non-interactively with a read-only sandbox, approval prompts disabled,
 and an ephemeral session in a temporary working directory. The prompt is passed through
 stdin; only the final response file is used as the commit message. Repository-local
-instructions are not loaded from the project directory. Model selection and authentication
-come from your Codex CLI configuration.
+instructions are not loaded from the project directory. Authentication and the default model
+come from your Codex CLI configuration; selecting a model in plugin settings overrides only the model.
+
+Model discovery uses Codex App Server's `model/list` or Claude Code's initialization
+response, without sending a prompt or starting a generation. Requests time out after
+10 seconds and are cancelled when settings close or the executable path changes.
+Older CLI versions that do not support discovery use the built-in suggestions.
 
 ## Building
 

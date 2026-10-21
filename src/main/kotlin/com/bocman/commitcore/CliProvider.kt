@@ -11,8 +11,13 @@ internal interface CliProvider {
     val pluginName: String get() = "$displayName Commit"
     val actionText: String get() = "Generate with $displayName"
     val effortLevels: List<CommitSettings.EffortLevel>
+    val fallbackModels: List<String>
 
-    fun command(executablePath: String, effort: String, resultFile: File): List<String>
+    fun modelListCommand(executablePath: String): List<String>
+
+    fun readModels(session: ModelCatalogSession): List<String>
+
+    fun command(executablePath: String, effort: String, resultFile: File, model: String = ""): List<String>
 
     fun parse(stdout: String, stderr: String, exitCode: Int, resultFile: File): String
 

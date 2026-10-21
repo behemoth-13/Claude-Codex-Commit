@@ -23,14 +23,20 @@ internal class CommitCli(private val provider: CliProvider) {
             .firstOrNull { it.isFile && it.canExecute() }?.absolutePath
     }
 
-    fun generate(executablePath: String, prompt: String, effort: String, indicator: ProgressIndicator): String {
+    fun generate(
+        executablePath: String,
+        prompt: String,
+        effort: String,
+        indicator: ProgressIndicator,
+        model: String = ""
+    ): String {
         indicator.checkCanceled()
         val directory = Files.createTempDirectory("commit_core_").toFile()
         var process: Process? = null
         try {
             val input = directory.resolve("prompt.txt").apply { writeText(prompt) }
             val result = directory.resolve("result.txt")
-            val builder = ProcessBuilder(provider.command(executablePath, effort, result))
+            val builder = ProcessBuilder(provider.command(executablePath, effort, result, model.trim()))
                 .redirectErrorStream(false)
                 .redirectInput(input)
                 .directory(provider.workingDirectory(directory))

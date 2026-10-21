@@ -11,11 +11,11 @@ internal object CommitMessageGenerator {
         val executable = cli.find(settings.executablePath)
             ?: throw RuntimeException(
                 "${provider.cliName} CLI not found.\n" +
-                    "Install ${provider.cliName} or configure its path under Settings → Tools → ${provider.pluginName}."
+                        "Install ${provider.cliName} or configure its path under Settings → Tools → ${provider.pluginName}."
             )
         val prompt = settings.promptTemplate
             .replace("{BRANCH}", branch)
             .replace("{DIFF}", diff)
-        return cli.generate(executable, prompt, settings.effortLevel.cliValue, indicator)
+        return cli.generate(executable, prompt, settings.effortLevel.cliValue, indicator, settings.model)
     }
 }

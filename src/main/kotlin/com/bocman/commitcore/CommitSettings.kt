@@ -17,13 +17,24 @@ abstract class CommitSettings {
     open class State {
         @JvmField
         var promptTemplate: String = DEFAULT_PROMPT
+
         @JvmField
         var effortLevel: String = EffortLevel.LOW.cliValue
+
+        @JvmField
+        var model: String = ""
     }
 
     protected abstract val settingsState: State
 
     abstract var executablePath: String
+
+    /** Empty preserves the CLI's configured default model. */
+    var model: String
+        get() = settingsState.model.trim()
+        set(value) {
+            settingsState.model = value.trim()
+        }
 
     var promptTemplate: String
         get() = settingsState.promptTemplate
