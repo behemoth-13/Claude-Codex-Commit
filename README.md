@@ -1,5 +1,10 @@
 # Codex Commit & Claude Commit
 
+[![Install Codex Commit](https://img.shields.io/badge/Marketplace-Install_Codex_Commit-111827?logo=jetbrains)](https://plugins.jetbrains.com/plugin/35355-codex-commit)
+[![Install Claude Commit](https://img.shields.io/badge/Marketplace-Install_Claude_Commit-D97757?logo=jetbrains)](https://plugins.jetbrains.com/plugin/31445-claude-commit)
+
+> Codex Commit is currently awaiting JetBrains Marketplace review. Its installation link will become available after approval.
+
 Two IntelliJ Platform plugins that generate Git commit messages from your selected
 changes using a locally installed AI CLI. This repository contains both plugins,
 with shared commit selection, message generation, and settings UI.
@@ -32,17 +37,29 @@ Sign in to the corresponding CLI before generating a message.
 
 ## Requirements
 
-- IntelliJ-based IDE with Git support (compiled and tested against IDEA 2025.1).
+- IntelliJ-based IDE 2025.1 or later (build 251+) with Git support.
 - The CLI matching your plugin (`codex` or `claude`), installed and authenticated.
   It must be on `$PATH`, in a common installation location, or configured explicitly in settings.
 - Codex CLI must support `exec`, `--ephemeral`, `--sandbox`, and `--output-last-message`.
 
-The compilation target is currently IntelliJ IDEA 2025.1 with JVM 21.
-Although the plugin metadata declares 2023.2 compatibility, older IDE versions remain unverified.
+The build target is IntelliJ IDEA Community 2025.1.4.1 with JVM 21.
+The minimum declared IDE version is 2025.1 (build 251); older IDE versions are
+unsupported. Other IDE products and newer releases require separate compatibility
+verification; check the Marketplace page for your IDE's available versions.
 
 ## Installation
 
-Install from the JetBrains Marketplace, or build locally:
+Install from the JetBrains Marketplace:
+
+- [Codex Commit](https://plugins.jetbrains.com/plugin/35355-codex-commit) — awaiting Marketplace review; installation will be available after approval.
+- [Claude Commit](https://plugins.jetbrains.com/plugin/31445-claude-commit)
+
+For manual installation, download the matching plugin ZIP from
+[GitHub Releases](https://github.com/behemoth-13/Claude-Codex-Commit/releases)
+and use **Settings → Plugins → Install Plugin from Disk**. Each release includes
+notes about its requirements and Marketplace availability.
+
+Alternatively, build locally:
 
 ```bash
 # Codex Commit (default):
@@ -105,6 +122,12 @@ Provider-specific tests live under `src/<flavor>/test/kotlin` and run alongside
 the shared tests. Each distributable includes only its own provider implementation.
 Plugin IDs, settings component names, storage files, and executable-path XML keys
 remain stable across package refactors.
+
+## Feedback
+
+[Report a bug](https://github.com/behemoth-13/Claude-Codex-Commit/issues/new?template=bug_report.yml)
+or [suggest a feature](https://github.com/behemoth-13/Claude-Codex-Commit/issues/new?template=feature_request.yml).
+Include the plugin name, plugin version, IDE version, and CLI version when reporting a bug.
 
 ## License
 

@@ -40,7 +40,7 @@ repositories {
 dependencies {
     testImplementation("junit:junit:4.13.2")
     intellijPlatform {
-        create("IC", "2025.1.4.1")
+        create(properties("platformType"), properties("platformVersion"))
         testFramework(org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform)
         bundledPlugin("Git4Idea")
     }
@@ -68,7 +68,6 @@ tasks {
     }
     patchPluginXml {
         inputFile.set(layout.projectDirectory.file("src/$flavor/resources/META-INF/plugin.xml"))
-        sinceBuild.set("232")
     }
     buildPlugin {
         archiveBaseName.set("$providerName-Commit")

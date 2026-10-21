@@ -2,7 +2,7 @@
     <id>com.bocman.claudecommit</id>
     <name>Claude Commit</name>
     <vendor email="behemothad@gmail.com" url="https://github.com/behemoth-13">Bocman</vendor>
-    <idea-version since-build="232"/>
+    <idea-version since-build="251"/>
     <category>Version Control</category>
     <description><![CDATA[
         Adds a <b>Generate with Claude</b> button to the Git commit dialog.<br/>

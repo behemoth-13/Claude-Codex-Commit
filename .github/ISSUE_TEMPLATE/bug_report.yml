@@ -1,0 +1,86 @@
+name: Bug report
+description: Report a problem with Claude Commit or Codex Commit.
+title: "[Bug]: "
+body:
+  - type: dropdown
+    id: plugin
+    attributes:
+      label: Plugin
+      options:
+        - Claude Commit
+        - Codex Commit
+        - Both plugins
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: Find this in Settings → Plugins → Installed.
+      placeholder: "1.0.3"
+    validations:
+      required: true
+  - type: input
+    id: ide-version
+    attributes:
+      label: IDE and build number
+      description: Copy the IDE name, version, and build number from Help → About.
+      placeholder: IntelliJ IDEA Community 2025.1.4.1 (IC-251.…)
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and architecture
+      placeholder: macOS 15, Apple Silicon
+    validations:
+      required: true
+  - type: input
+    id: cli-version
+    attributes:
+      label: CLI and version
+      description: Run claude --version or codex --version. If the CLI is missing, say so.
+    validations:
+      required: true
+  - type: dropdown
+    id: entry-point
+    attributes:
+      label: Where does the problem occur?
+      options:
+        - Commit toolbar action
+        - Commit options button
+        - Plugin settings
+        - Installation or startup
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include whether you selected whole files or individual hunks or lines.
+      placeholder: |
+        1. Open the Commit tool window.
+        2. Select …
+        3. Click …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the error message and screenshots if useful.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Paste relevant IDE or CLI errors. Remove credentials and private source code first.
+      render: text

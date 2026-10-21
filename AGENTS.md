@@ -60,11 +60,12 @@ Shared sources: `src/main/kotlin/com/bocman/commitcore/`.
 
 ## Known constraints to revisit when relevant
 
-- Compatibility declarations conflict: README, `plugin.xml`, and `patchPluginXml`
-  claim 2023.2 / build 232, while compilation uses IDEA 2025.1.4.1, JVM 21, and
-  `pluginConfiguration.ideaVersion` sets build 251. Older IDE support is unverified.
-- `platformVersion` and `platformType` in `gradle.properties` are currently not
-  used by the hardcoded platform dependency in `build.gradle.kts`.
+- The minimum declared IDE version is 2025.1 / build 251; compilation uses
+  IDEA 2025.1.4.1 and JVM 21. Older IDEs are unsupported. Compatibility with
+  other IDE products and newer releases must be verified before claiming support.
+- `platformVersion` and `platformType` in `gradle.properties` define the build
+  target. Keep the minimum build in `pluginConfiguration.ideaVersion` and both
+  source plugin descriptors aligned when changing the supported baseline.
 - Branch lookup currently uses the first repository in the project; do not
   assume correct multi-root branch context.
 - CLI discovery contains Unix-specific paths; Windows support is unverified.
