@@ -52,7 +52,7 @@ internal object ClaudeCliResult {
         }
         val explanation = if (tooLarge) {
             "Claude could not process the selected changes because the input exceeds its size or context limit.\n" +
-                "Select fewer files or hunks, or split the changes into smaller commits."
+                    "Select fewer files or hunks, or split the changes into smaller commits."
         } else {
             summary
         }

@@ -1,5 +1,7 @@
 package com.bocman.claudecommit
 
+import com.bocman.commitcore.CommitCli
+
 import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.testFramework.LightPlatformTestCase
@@ -41,7 +43,10 @@ class ClaudeCliTest : LightPlatformTestCase() {
     }
 
     fun testStructuredErrorsAreReportedWithoutResult() {
-        withCli("""{"type":"result","subtype":"error_during_execution","is_error":true,"errors":["Context window exceeded","Request rejected"]}""", exitCode = 1) { cli, _ ->
+        withCli(
+            """{"type":"result","subtype":"error_during_execution","is_error":true,"errors":["Context window exceeded","Request rejected"]}""",
+            exitCode = 1
+        ) { cli, _ ->
             val message = failure(cli)
             assertTrue(message, message.contains("Context window exceeded"))
             assertTrue(message, message.contains("Request rejected"))
@@ -75,9 +80,11 @@ class ClaudeCliTest : LightPlatformTestCase() {
     }
 
     fun testMalformedOutputCannotReplaceCommitMessage() {
-        for (output in listOf("", "Prompt is too long", "{broken", "[]", "{}",
+        for (output in listOf(
+            "", "Prompt is too long", "{broken", "[]", "{}",
             """{"type":"result","subtype":"success","result":"Missing status"}""",
-            """{"type":"result","subtype":"success","is_error":false,"result":42}""")) {
+            """{"type":"result","subtype":"success","is_error":false,"result":42}"""
+        )) {
             withCli(output) { cli, _ -> failure(cli) }
         }
     }
@@ -106,7 +113,7 @@ class ClaudeCliTest : LightPlatformTestCase() {
         withCli(success("Unused")) { cli, _ ->
             val indicator = EmptyProgressIndicator().apply { cancel() }
             expectThrows(ProcessCanceledException::class.java) {
-                GenerateWithClaudeAction().callClaude(cli, "prompt", indicator)
+                CommitCli(ClaudeCliProvider).generate(cli, "prompt", "low", indicator)
             }
         }
     }
@@ -115,7 +122,7 @@ class ClaudeCliTest : LightPlatformTestCase() {
         """{"type":"result","subtype":"success","is_error":false,"result":"$result"}"""
 
     private fun call(cli: String, prompt: String = "Selected diff") =
-        GenerateWithClaudeAction().callClaude(cli, prompt, EmptyProgressIndicator())
+        CommitCli(ClaudeCliProvider).generate(cli, prompt, "low", EmptyProgressIndicator())
 
     private fun failure(cli: String): String =
         expectThrows(RuntimeException::class.java) { call(cli) }.message.orEmpty()
@@ -132,14 +139,16 @@ class ClaudeCliTest : LightPlatformTestCase() {
             val error = directory.resolve("stderr").apply { writeText(stderr) }
             val input = directory.resolve("stdin")
             val cli = directory.resolve("claude").apply {
-                writeText("""
+                writeText(
+                    """
                     |#!/bin/sh
                     |printf '%s\n' "${'$'}@" > '${directory.resolve("arguments").path}'
                     |cat > '${input.path}'
                     |cat '${output.path}'
                     |cat '${error.path}' >&2
                     |exit $exitCode
-                """.trimMargin() + "\n")
+                """.trimMargin() + "\n"
+                )
                 check(setExecutable(true))
             }
             check(cli.path, input)

@@ -1,0 +1,42 @@
+<idea-plugin>
+    <id>com.bocman.codexcommit</id>
+    <name>Codex Commit</name>
+    <vendor email="behemothad@gmail.com" url="https://github.com/behemoth-13">Bocman</vendor>
+    <version>1.0.2</version>
+    <idea-version since-build="232"/>
+    <category>Version Control</category>
+    <description><![CDATA[
+        Adds a <b>Generate with Codex</b> button to the Git commit dialog.<br/>
+        On click, it sends the selected changes and branch name to the locally installed
+        <a href="https://developers.openai.com/codex/cli">Codex CLI</a> and fills in the
+        commit message with the AI-generated result.<br/><br/>
+        Configure the prompt template under <b>Settings → Tools → Codex Commit</b>.
+    ]]></description>
+    <change-notes><![CDATA[
+        Generate commit messages using Codex CLI.
+    ]]></change-notes>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.vcs</depends>
+    <depends>Git4Idea</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.bocman.codexcommit.CodexCommitSettings"/>
+        <applicationConfigurable
+                parentId="tools"
+                instance="com.bocman.commitcore.CommitConfigurable"
+                id="com.bocman.codexcommit.settings"
+                displayName="Codex Commit"/>
+        <checkinHandlerFactory implementation="com.bocman.commitcore.CommitHandlerFactory"/>
+    </extensions>
+
+    <actions>
+        <action id="CodexCommit.Generate"
+                class="com.bocman.commitcore.GenerateCommitMessageAction"
+                text="Generate with Codex"
+                description="Generate a commit message using the local Codex CLI"
+                icon="/icons/codexCommit.svg">
+            <add-to-group group-id="Vcs.MessageActionGroup" anchor="first"/>
+        </action>
+    </actions>
+</idea-plugin>

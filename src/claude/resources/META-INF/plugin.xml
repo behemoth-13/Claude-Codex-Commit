@@ -7,7 +7,7 @@
     <category>Version Control</category>
     <description><![CDATA[
         Adds a <b>Generate with Claude</b> button to the Git commit dialog.<br/>
-        On click, it sends your staged diff and branch name to the locally installed
+        On click, it sends the selected changes and branch name to the locally installed
         <a href="https://claude.ai/download">Claude Code</a> CLI and fills in the
         commit message with the AI-generated result.<br/><br/>
         Configure the prompt template under <b>Settings → Tools → Claude Commit</b>.
@@ -28,15 +28,15 @@
         <applicationService serviceImplementation="com.bocman.claudecommit.ClaudeCommitSettings"/>
         <applicationConfigurable
                 parentId="tools"
-                instance="com.bocman.claudecommit.ClaudeCommitConfigurable"
+                instance="com.bocman.commitcore.CommitConfigurable"
                 id="com.bocman.claudecommit.settings"
                 displayName="Claude Commit"/>
-        <checkinHandlerFactory implementation="com.bocman.claudecommit.ClaudeCommitHandlerFactory"/>
+        <checkinHandlerFactory implementation="com.bocman.commitcore.CommitHandlerFactory"/>
     </extensions>
 
     <actions>
         <action id="ClaudeCommit.Generate"
-                class="com.bocman.claudecommit.GenerateWithClaudeAction"
+                class="com.bocman.commitcore.GenerateCommitMessageAction"
                 text="Generate with Claude"
                 description="Generate a commit message using the local Claude Code CLI"
                 icon="/icons/claudeCommit.svg">

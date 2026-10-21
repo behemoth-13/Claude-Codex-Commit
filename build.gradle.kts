@@ -8,7 +8,26 @@ plugins {
 
 fun properties(key: String): String = providers.gradleProperty(key).get()
 
-group   = properties("pluginGroup")
+val flavor = providers.gradleProperty("flavor").getOrElse("claude")
+require(flavor in setOf("claude", "codex")) { "Unknown flavor '$flavor'. Use claude or codex." }
+val providerName = if (flavor == "codex") "Codex" else "Claude"
+layout.buildDirectory.set(layout.projectDirectory.dir("build/$flavor"))
+base {
+    archivesName.set("$providerName-Commit")
+}
+sourceSets {
+    main {
+        resources.srcDir("src/$flavor/resources")
+    }
+}
+kotlin.sourceSets.main {
+    kotlin.srcDir("src/$flavor/kotlin")
+}
+kotlin.sourceSets.test {
+    kotlin.srcDir("src/$flavor/test/kotlin")
+}
+
+group = properties("pluginGroup")
 version = properties("pluginVersion")
 
 repositories {
@@ -28,7 +47,10 @@ dependencies {
 }
 
 intellijPlatform {
+    buildSearchableOptions = false
+
     pluginConfiguration {
+        name = "$providerName Commit"
         ideaVersion {
             sinceBuild = "251"
         }
@@ -44,11 +66,13 @@ tasks {
         sourceCompatibility = "21"
         targetCompatibility = "21"
     }
-    buildSearchableOptions {
-        enabled = false
-    }
     patchPluginXml {
+        inputFile.set(layout.projectDirectory.file("src/$flavor/resources/META-INF/plugin.xml"))
         sinceBuild.set("232")
+    }
+    buildPlugin {
+        archiveBaseName.set("$providerName-Commit")
+        destinationDirectory.set(layout.projectDirectory.dir("build/distributions"))
     }
 }
 
