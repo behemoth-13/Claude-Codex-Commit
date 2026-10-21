@@ -1,10 +1,22 @@
-# Claude Commit
+# Codex Commit & Claude Commit
 
-An IntelliJ plugin that generates Git commit messages using a locally installed CLI.
-Two build flavors share the same generation logic: **Claude Commit** uses
-[Claude Code](https://claude.ai/download), and **Codex Commit** uses Codex CLI.
+Two IntelliJ Platform plugins that generate Git commit messages from your selected
+changes using a locally installed AI CLI. This repository contains both plugins,
+with shared commit selection, message generation, and settings UI.
+
+| Plugin | CLI | Build command |
+|---|---|---|
+| **Codex Commit** (default build) | Codex CLI (`codex`) | `./gradlew buildPlugin` |
+| **Claude Commit** | [Claude Code](https://claude.ai/download) (`claude`) | `./gradlew buildPlugin -Pflavor=claude` |
+
+Install the plugin matching the CLI you use, or install both. Each plugin has its
+own settings and generation action. They fill in the commit message for you to
+review and edit; they do not create commits.
 
 ![Plugin Icon](src/claude/resources/META-INF/pluginIcon.svg)
+
+The screenshots below show Claude Commit; Codex Commit uses the same workflow
+with Codex-specific labels and settings.
 
 <img width="1200" height="761" alt="Screenshot 2026-04-24 at 20 16 52" src="https://github.com/user-attachments/assets/2b72fd41-0b3b-4bb9-a903-3f535fef88b6" />
 <img width="1213" height="821" alt="image" src="https://github.com/user-attachments/assets/1c4b80e8-8eb4-4bd4-a12a-81b7c9458507" />
@@ -14,8 +26,8 @@ Two build flavors share the same generation logic: **Claude Commit** uses
 
 1. Open the Git commit dialog (`⌘0` / `Alt+0`)
 2. Check the files or individual changes you want to commit
-3. Click **Generate with Claude** or **Generate with Codex** in the toolbar (or the button in the commit options strip)
-4. The plugin reads the branch name and diff of the selected changes, sends them to the selected flavor's CLI, and fills in the commit message. Unchecked hunks and lines within a file are excluded.
+3. Click **Generate with Codex** or **Generate with Claude** in the toolbar (or the button in the commit options strip)
+4. The plugin reads the branch name and diff of the selected changes, sends them to its corresponding CLI, and fills in the commit message. Unchecked hunks and lines within a file are excluded.
 
 The plugin uses your CLI's existing authentication; it does not store credentials.
 Sign in to the corresponding CLI before generating a message.
@@ -23,7 +35,7 @@ Sign in to the corresponding CLI before generating a message.
 ## Requirements
 
 - IntelliJ-based IDE with Git support (compiled and tested against IDEA 2025.1).
-- The CLI matching your flavor (`claude` or `codex`), installed and authenticated.
+- The CLI matching your plugin (`codex` or `claude`), installed and authenticated.
   It must be on `$PATH`, in a common installation location, or configured explicitly in settings.
 - Codex CLI must support `exec`, `--ephemeral`, `--sandbox`, and `--output-last-message`.
 
@@ -35,25 +47,27 @@ Although the plugin metadata declares 2023.2 compatibility, older IDE versions r
 Install from the JetBrains Marketplace, or build locally:
 
 ```bash
-./gradlew buildPlugin -Pflavor=claude
-# Or build the default Codex flavor:
+# Codex Commit (default):
 ./gradlew buildPlugin
+# Claude Commit:
+./gradlew buildPlugin -Pflavor=claude
 ```
 
 Then install the ZIP from `build/distributions/` via **Settings → Plugins → Install Plugin from Disk**.
-The ZIPs are named `Claude-Commit-<version>.zip` and `Codex-Commit-<version>.zip`.
+The ZIPs are named `Codex-Commit-<version>.zip` and `Claude-Commit-<version>.zip`.
 Each flavor has its own plugin ID, action ID, and settings file, so both can be installed together.
 Codex is the default build flavor. Use `-Pflavor=claude` for Claude Commit, which retains its existing settings.
 
 ## Settings
 
-**Settings → Tools → Claude Commit** or **Codex Commit**
+Open **Settings → Tools → Codex Commit** or **Settings → Tools → Claude Commit**,
+depending on the installed plugin.
 
 | Setting | Description |
 |---|---|
-| Claude / Codex executable | Path to the corresponding CLI binary. Leave empty to auto-detect from common locations and `$PATH`. |
+| Codex / Claude executable | Path to the corresponding CLI binary. Leave empty to auto-detect from common locations and `$PATH`. |
 | Model | Choose a model or type a custom model name. **Default (CLI configuration)** or an empty field omits `--model`, preserving the CLI's configured default. Models load from the CLI in the background; **Refresh Models** reloads them using the executable path currently entered. If discovery fails, built-in suggestions remain available. |
-| Effort level | Claude: Low → Medium → High → Extra High → Max. Codex: Low → Medium → High → Extra High. Supported effort levels depend on the CLI's selected model. |
+| Effort level | Codex: Low → Medium → High → Extra High. Claude: Low → Medium → High → Extra High → Max. Supported effort levels depend on the CLI's selected model. |
 | Prompt template | The prompt sent to the CLI. Use `{BRANCH}` and `{DIFF}` as placeholders. |
 
 Codex runs non-interactively with a read-only sandbox, approval prompts disabled,
