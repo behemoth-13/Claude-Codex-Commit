@@ -4,16 +4,14 @@ Two IntelliJ Platform plugins that generate Git commit messages from your select
 changes using a locally installed AI CLI. This repository contains both plugins,
 with shared commit selection, message generation, and settings UI.
 
-| Plugin | CLI | Build command |
-|---|---|---|
-| **Codex Commit** (default build) | Codex CLI (`codex`) | `./gradlew buildPlugin` |
-| **Claude Commit** | [Claude Code](https://claude.ai/download) (`claude`) | `./gradlew buildPlugin -Pflavor=claude` |
+| Icon                                                         | Plugin                           | CLI                                                                             | Build command                           |
+|--------------------------------------------------------------|----------------------------------|---------------------------------------------------------------------------------|-----------------------------------------|
+| ![Plugin Icon](src/codex/resources/META-INF/pluginIcon.svg)  | **Codex Commit** (default build) | [Codex CLI](https://learn.chatgpt.com/docs/codex/cli#getting-started) (`codex`) | `./gradlew buildPlugin`                 |
+| ![Plugin Icon](src/claude/resources/META-INF/pluginIcon.svg) | **Claude Commit**                | [Claude Code](https://claude.ai/download) (`claude`)                            | `./gradlew buildPlugin -Pflavor=claude` |
 
 Install the plugin matching the CLI you use, or install both. Each plugin has its
 own settings and generation action. They fill in the commit message for you to
 review and edit; they do not create commits.
-
-![Plugin Icon](src/claude/resources/META-INF/pluginIcon.svg)
 
 The screenshots below show Claude Commit; Codex Commit uses the same workflow
 with Codex-specific labels and settings.
