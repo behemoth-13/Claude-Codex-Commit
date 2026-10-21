@@ -21,7 +21,7 @@ internal class CliModelCatalog(private val provider: CliProvider, private val ti
             var process: Process? = null
             try {
                 val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis)
-                val running = ProcessBuilder(provider.modelListCommand(executable))
+                val running = cliProcessBuilder(provider.modelListCommand(executable))
                     .directory(directory)
                     .redirectError(ProcessBuilder.Redirect.DISCARD)
                     .start()

@@ -3,8 +3,8 @@
 ## Scope
 
 This IntelliJ Platform plugin generates Git commit messages through a locally
-installed CLI. Claude Commit is the default flavor; `-Pflavor=codex` builds
-Codex Commit. Keep provider and branding changes scoped to the selected flavor.
+installed CLI. Codex Commit is the default flavor; `-Pflavor=claude` builds
+Claude Commit. Keep provider and branding changes scoped to the selected flavor.
 
 Keep replies brief and use the user's language. Keep code, UI text, and repository
 documentation in English, following existing conventions.
@@ -32,7 +32,7 @@ Shared sources: `src/main/kotlin/com/bocman/commitcore/`.
 - Gradle wrapper: 8.14.3; Kotlin: 2.1.0; IntelliJ Platform Gradle plugin: 2.7.1.
 - Compilation targets JVM 21 and IntelliJ IDEA Community 2025.1.4.1 with Git4Idea.
 - `./gradlew buildPlugin`: build the distributable ZIP in `build/distributions/`.
-- Add `-Pflavor=codex` to build, test or run Codex Commit. Intermediate output
+- Add `-Pflavor=claude` to build, test or run Claude Commit. Intermediate output
   and sandbox IDEs are isolated in `build/claude/` and `build/codex/`.
 - `./gradlew runIde`: launch a sandbox IDE.
 - `./gradlew test`: run tests under `src/test/kotlin/` with IntelliJ Platform and

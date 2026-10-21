@@ -36,16 +36,10 @@ internal class CommitCli(private val provider: CliProvider) {
         try {
             val input = directory.resolve("prompt.txt").apply { writeText(prompt) }
             val result = directory.resolve("result.txt")
-            val builder = ProcessBuilder(provider.command(executablePath, effort, result, model.trim()))
+            val builder = cliProcessBuilder(provider.command(executablePath, effort, result, model.trim()))
                 .redirectErrorStream(false)
                 .redirectInput(input)
                 .directory(provider.workingDirectory(directory))
-            with(builder.environment()) {
-                val home = System.getProperty("user.home")
-                putIfAbsent("HOME", home)
-                val path = getOrDefault("PATH", "/usr/local/bin:/usr/bin:/bin")
-                put("PATH", "$path:/usr/local/bin:/opt/homebrew/bin:$home/.local/bin:$home/.npm-global/bin")
-            }
             val running = builder.start()
             process = running
             val stdout = CompletableFuture.supplyAsync { running.inputStream.bufferedReader().use { it.readText() } }
@@ -72,5 +66,15 @@ internal class CommitCli(private val provider: CliProvider) {
                 directory.deleteRecursively()
             }
         }
+    }
+}
+
+/** Use the same environment for generation and model discovery, including npm CLI dependencies. */
+internal fun cliProcessBuilder(command: List<String>): ProcessBuilder = ProcessBuilder(command).apply {
+    with(environment()) {
+        val home = System.getProperty("user.home")
+        putIfAbsent("HOME", home)
+        val path = getOrDefault("PATH", "/usr/local/bin:/usr/bin:/bin")
+        put("PATH", "$path:/usr/local/bin:/opt/homebrew/bin:$home/.local/bin:$home/.npm-global/bin")
     }
 }

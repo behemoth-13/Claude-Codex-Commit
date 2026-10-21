@@ -35,15 +35,15 @@ Although the plugin metadata declares 2023.2 compatibility, older IDE versions r
 Install from the JetBrains Marketplace, or build locally:
 
 ```bash
+./gradlew buildPlugin -Pflavor=claude
+# Or build the default Codex flavor:
 ./gradlew buildPlugin
-# Or build the Codex flavor:
-./gradlew buildPlugin -Pflavor=codex
 ```
 
 Then install the ZIP from `build/distributions/` via **Settings → Plugins → Install Plugin from Disk**.
 The ZIPs are named `Claude-Commit-<version>.zip` and `Codex-Commit-<version>.zip`.
 Each flavor has its own plugin ID, action ID, and settings file, so both can be installed together.
-Claude remains the default flavor and retains its existing settings.
+Codex is the default build flavor. Use `-Pflavor=claude` for Claude Commit, which retains its existing settings.
 
 ## Settings
 
@@ -70,11 +70,11 @@ Older CLI versions that do not support discovery use the built-in suggestions.
 ## Building
 
 ```bash
-./gradlew runIde      # launch a sandbox IDE with the plugin loaded
-./gradlew buildPlugin # produce a distributable ZIP
-./gradlew test        # run IntelliJ Platform integration tests
+./gradlew runIde      # launch a sandbox IDE with Codex Commit loaded
+./gradlew buildPlugin # produce the Codex Commit distributable ZIP
+./gradlew test        # run Codex and shared IntelliJ Platform integration tests
 
-./gradlew runIde -Pflavor=codex
+./gradlew runIde -Pflavor=claude
 ./gradlew test buildPlugin -Pflavor=claude
 ./gradlew test buildPlugin -Pflavor=codex
 ```

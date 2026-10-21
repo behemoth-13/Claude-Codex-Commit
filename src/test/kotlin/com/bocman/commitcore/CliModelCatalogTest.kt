@@ -23,6 +23,26 @@ class CliModelCatalogTest : LightPlatformTestCase() {
         }
     }
 
+    fun testLoadsModelsWhenCliDependencyIsInUserLocalBin() {
+        withCli("exec commit-catalog-test-helper") { cli, directory ->
+            val bin = directory.resolve(".local/bin").apply { mkdirs() }
+            bin.resolve("commit-catalog-test-helper").apply {
+                writeText("#!/bin/sh\n${successScript()}\n")
+                check(setExecutable(true))
+            }
+            val originalHome = System.getProperty("user.home")
+            try {
+                System.setProperty("user.home", directory.path)
+                val result = CliModelCatalog(PluginFlavor.provider).load(cli, EmptyProgressIndicator())
+                assertTrue("CLI dependencies in ~/.local/bin must be available during model discovery", result.fromCli)
+                assertEquals(listOf("new-model", "another-model"), result.models)
+                assertStopped(directory)
+            } finally {
+                System.setProperty("user.home", originalHome)
+            }
+        }
+    }
+
     fun testUnsupportedOrMalformedCatalogUsesFallback() {
         for (reply in listOf(
             "not json", "{}", if (codex) {
