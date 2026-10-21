@@ -2,7 +2,6 @@
     <id>com.bocman.codexcommit</id>
     <name>Codex Commit</name>
     <vendor email="behemothad@gmail.com" url="https://github.com/behemoth-13">Bocman</vendor>
-    <version>1.0.2</version>
     <idea-version since-build="232"/>
     <category>Version Control</category>
     <description><![CDATA[
