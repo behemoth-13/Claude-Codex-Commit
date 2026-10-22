@@ -3,8 +3,6 @@
 [![Install Codex Commit](https://img.shields.io/badge/Marketplace-Install_Codex_Commit-111827?logo=jetbrains)](https://plugins.jetbrains.com/plugin/35355-codex-commit)
 [![Install Claude Commit](https://img.shields.io/badge/Marketplace-Install_Claude_Commit-D97757?logo=jetbrains)](https://plugins.jetbrains.com/plugin/31445-claude-commit)
 
-> Codex Commit is currently awaiting JetBrains Marketplace review. Its installation link will become available after approval.
-
 Two IntelliJ Platform plugins that generate Git commit messages from your selected
 changes using a locally installed AI CLI. This repository contains both plugins,
 with shared commit selection, message generation, and settings UI.
@@ -51,7 +49,7 @@ verification; check the Marketplace page for your IDE's available versions.
 
 Install from the JetBrains Marketplace:
 
-- [Codex Commit](https://plugins.jetbrains.com/plugin/35355-codex-commit) — awaiting Marketplace review; installation will be available after approval.
+- [Codex Commit](https://plugins.jetbrains.com/plugin/35355-codex-commit)
 - [Claude Commit](https://plugins.jetbrains.com/plugin/31445-claude-commit)
 
 For manual installation, download the matching plugin ZIP from
